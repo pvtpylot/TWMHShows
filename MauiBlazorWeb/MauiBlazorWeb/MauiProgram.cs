@@ -39,7 +39,6 @@ namespace MauiBlazorWeb
             // Add the user service registration here
             builder.Services.AddScoped<IUserService, MauiUserService>();
 
-
             return builder.Build();
         }
     }
