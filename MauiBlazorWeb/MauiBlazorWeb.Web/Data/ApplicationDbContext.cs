@@ -5,5 +5,6 @@ namespace MauiBlazorWeb.Web.Data
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
     {
+        public DbSet<UserModelObject> UserModelObjects { get; set; }
     }
 }

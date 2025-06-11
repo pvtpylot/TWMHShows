@@ -2,6 +2,7 @@ using MauiBlazorWeb.Shared.Services;
 using MauiBlazorWeb.Web.Components;
 using MauiBlazorWeb.Web.Components.Account;
 using MauiBlazorWeb.Web.Data;
+using MauiBlazorWeb.Web.Data.Repositories;
 using MauiBlazorWeb.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -32,6 +33,8 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+builder.Services.AddScoped<IUserModelObjectRepository, UserModelObjectRepository>();
+builder.Services.AddScoped<IDataService, WebDataService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -90,6 +93,23 @@ app.MapGet("/api/weather", async (IWeatherService weatherService) =>
 {
     var forecasts = await weatherService.GetWeatherForecastsAsync();
     return Results.Ok(forecasts);
+}).RequireAuthorization();
+
+app.MapGet("/api/userModelObjects", async (IDataService dataService, string applicationUserId) =>
+{
+    if (string.IsNullOrEmpty(applicationUserId))
+    {
+        return Results.BadRequest("The 'applicationUserId' parameter is required.");
+    }
+    // Your existing logic here
+    return Results.Ok(await dataService.GetAllUserModelObjectsAsync(applicationUserId));
+}).RequireAuthorization();
+
+
+app.MapGet("/api/userModelObjects/{id}", async (IDataService dataService, string id) =>
+{
+    var result = await dataService.GetUserModelObjectByIdAsync(id);
+    return result != null ? Results.Ok(result) : Results.NotFound();
 }).RequireAuthorization();
 
 app.Run();

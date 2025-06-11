@@ -38,8 +38,12 @@ namespace MauiBlazorWeb
             builder.Services.AddScoped<IWeatherService, WeatherService>();
             // Add the user service registration here
             builder.Services.AddScoped<IUserService, MauiUserService>();
+            // Add these lines to MauiProgram.cs
+            builder.Services.AddScoped<HttpClient>(sp => new HttpClient { BaseAddress = new Uri("https://your-api-base-address/") });
+            builder.Services.AddScoped<IDataService, MauiDataService>();
 
             return builder.Build();
         }
     }
 }
+    
