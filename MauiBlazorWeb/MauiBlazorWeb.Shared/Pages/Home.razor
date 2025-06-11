@@ -1,0 +1,130 @@
+@page "/"
+@using MauiBlazorWeb.Shared.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IFormFactor FormFactor
+@inject IUserService UserService
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
+
+<PageTitle>Home</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <h1>Hi Dude!  You are logged into Tradewinds Model Horse Show as @context.User.Identity.Name!</h1>
+    </Authorized>
+    <NotAuthorized>
+        <h1 align="center">Welcome to the Tradewinds Model Horse Show Community!</h1>
+        <div style="font-size:18px; color:blue; margin-top: 14px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-4"></div>
+                <div class="col-4 text-center">
+                    <img src="/img/tradewinds_logo.png" style="height:150px; align-content:center" alt="Tradewinds logo">
+                </div>
+                <div class="col-4"></div>
+            </div>
+        </div>
+        
+        <div class="container mt-4">
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
+                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
+                        <div class="card-body" style="height:250px">
+                            <h5 class="card-title">Create Your Stable</h5>
+                            <p class="card-text">Upload your own photos and then organize your stable however works best for you</p>
+                            <a href="pricing" class="btn btn-primary" style="position:absolute;top:85%;left:36%">Free Trial!</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
+                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
+                        <div class="card-body" style="height:250px">
+                            <h5 class="card-title">Weekly Shows!</h5>
+                            <p class="card-text">Weekly shows featuring judges known and respected throughout the model horse hobby!</p>
+                            <a href="showtypes" class="btn btn-primary" style="position:absolute;top:85%;left:36%">Learn More!</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
+                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
+                        <div class="card-body" style="height:250px">
+                            <h5 class="card-title">New to the Hobby?</h5>
+                            <p class="card-text">No problem, Tradewinds features beginning and tutorial shows, live learning sessions, as well as articles and videos where hobby experts will teach you what you need to know to have fun with model showing!</p>
+                            <a href="showtypes#tutorial" class="btn btn-primary" style="position:absolute;top:85%;left:36%">See More!</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container mt-4">
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
+                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
+                        <div class="card-body" style="height:250px">
+                            <h5 class="card-title">Show Feedback</h5>
+                            <p class="card-text">Not getting the results you hoped for?  Ask one of our judges to evaluate your stable and recommend photo and class decisions for you.</p>
+                            <a href="review" class="btn btn-primary" style="position:absolute;top:85%;left:36%">Free Trial!</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
+                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
+                        <div class="card-body" style="height:250px">
+                            <h5 class="card-title">Unlimited photo storage!</h5>
+                            <p class="card-text">Store as many photos of your models as you like, and create show strings with specific pics for different scenarios!</p>
+                            <a href="stableorg" class="btn btn-primary" style="position:absolute;top:85%;left:36%">Learn More!</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
+                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
+                        <div class="card-body" style="height:250px">
+                            <h5 class="card-title">Need Model or Horse Info?</h5>
+                            <p class="card-text">No problem, Tradewinds features a large, searchable reference library with links to model resources and articles by hobby experts!</p>
+                            <a href="refinfo" class="btn btn-primary" style="position:absolute;top:85%;left:36%">See More!</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+Welcome to your new app running on <em>@factor</em> using <em>@platform</em>.
+
+@code {
+    private string factor => FormFactor.GetFormFactor();
+    private string platform => FormFactor.GetPlatform();
+
+    private string first_name = "First_Name";
+
+    public string FirstName
+    {
+        get => first_name;
+        set => first_name = value;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        FirstName = await GetUserName();
+    }
+
+    private async Task<string> GetUserName()
+    {
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        var name = user.Identity?.Name;
+
+        if (!string.IsNullOrEmpty(name))
+        {
+            return await UserService.GetUserFirstNameAsync(name);
+        }
+
+        return "First_Name";
+    }
+}
