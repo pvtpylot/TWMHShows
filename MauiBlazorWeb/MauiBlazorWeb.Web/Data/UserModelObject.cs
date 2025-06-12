@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace MauiBlazorWeb.Web.Data
 {
@@ -8,15 +9,18 @@ namespace MauiBlazorWeb.Web.Data
         public int Id { get; set; }
         public int? TWEntryId { get; set; }
         [Required]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         [Required]
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
         public string? ApplicationUserId { get; set; }
-        public ApplicationUser? ApplicationUser { get; set; } = null!;
-        public string Color { get; set; }
-        public string Size { get; set; }
-        public string Class { get; set; }
-        public string Breed { get; set; }
-        public string Notes { get; set; }
+        public virtual ApplicationUser? ApplicationUser { get; set; }
+        public string Color { get; set; } = string.Empty;
+        public string Size { get; set; } = string.Empty;
+        public string Class { get; set; } = string.Empty;
+        public string Breed { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
+        
+        // Navigation property to entries
+        public virtual ICollection<Entry> Entries { get; set; } = new List<Entry>();
     }
 }

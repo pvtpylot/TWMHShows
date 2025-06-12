@@ -36,11 +36,25 @@ namespace MauiBlazorWeb
             // Add device-specific services used by the MauiBlazorWeb.Shared project
             builder.Services.AddSingleton<IFormFactor, FormFactor>();
             builder.Services.AddScoped<IWeatherService, WeatherService>();
-            // Add the user service registration here
+            // Change this section of code:
+
+// Add the user service registration here
             builder.Services.AddScoped<IUserService, MauiUserService>();
-            // Add these lines to MauiProgram.cs
-            builder.Services.AddScoped<HttpClient>(sp => new HttpClient { BaseAddress = new Uri("https://your-api-base-address/") });
+
+// Register HTTP client for all API services
+            builder.Services.AddScoped<HttpClient>(sp => 
+            {
+                var httpClient = HttpClientHelper.GetHttpClient();
+                httpClient.BaseAddress = new Uri(HttpClientHelper.BaseUrl);
+                return httpClient;
+            });
+
+// Register data services
             builder.Services.AddScoped<IDataService, MauiDataService>();
+            builder.Services.AddScoped<IShowService, MauiShowService>();
+            builder.Services.AddScoped<IShowClassService, MauiShowClassService>();
+            builder.Services.AddScoped<IEntryService, MauiEntryService>();
+            builder.Services.AddScoped<IResultService, MauiResultService>();
 
             return builder.Build();
         }

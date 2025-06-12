@@ -18,15 +18,17 @@ namespace MauiBlazorWeb.Services
 
         public async Task<IEnumerable<UserModelObjectDto>> GetAllUserModelObjectsAsync(string? applicationUserId)
         {
-            var queryString = applicationUserId != null ? $"?applicationUserId={applicationUserId}" : "";
-            return await _httpClient.GetFromJsonAsync<IEnumerable<UserModelObjectDto>>($"api/userModelObjects{queryString}") 
-                ?? new List<UserModelObjectDto>();
+            if (string.IsNullOrEmpty(applicationUserId))
+                return new List<UserModelObjectDto>();
+                
+            return await _httpClient.GetFromJsonAsync<IEnumerable<UserModelObjectDto>>($"api/userModelObjects?applicationUserId={applicationUserId}") 
+                   ?? new List<UserModelObjectDto>();
         }
 
         public async Task<UserModelObjectDto> GetUserModelObjectByIdAsync(string id)
         {
             return await _httpClient.GetFromJsonAsync<UserModelObjectDto>($"api/userModelObjects/{id}") 
-                ?? new UserModelObjectDto();
+                   ?? new UserModelObjectDto();
         }
     }
 }

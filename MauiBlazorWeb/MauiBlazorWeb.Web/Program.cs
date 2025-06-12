@@ -1,3 +1,4 @@
+using MauiBlazorWeb.Shared.Models.DTOs;
 using MauiBlazorWeb.Shared.Services;
 using MauiBlazorWeb.Web.Components;
 using MauiBlazorWeb.Web.Components.Account;
@@ -35,6 +36,18 @@ builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 builder.Services.AddScoped<IUserModelObjectRepository, UserModelObjectRepository>();
 builder.Services.AddScoped<IDataService, WebDataService>();
+
+// Register repositories
+builder.Services.AddScoped<IShowRepository, ShowRepository>();
+builder.Services.AddScoped<IShowClassRepository, ShowClassRepository>();
+builder.Services.AddScoped<IEntryRepository, EntryRepository>();
+builder.Services.AddScoped<IResultRepository, ResultRepository>();
+
+// Register services
+builder.Services.AddScoped<IShowService, ShowService>();
+builder.Services.AddScoped<IShowClassService, ShowClassService>();
+builder.Services.AddScoped<IEntryService, EntryService>();
+builder.Services.AddScoped<IResultService, ResultService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -111,5 +124,45 @@ app.MapGet("/api/userModelObjects/{id}", async (IDataService dataService, string
     var result = await dataService.GetUserModelObjectByIdAsync(id);
     return result != null ? Results.Ok(result) : Results.NotFound();
 }).RequireAuthorization();
+
+// Show API endpoints
+app.MapGet("/api/shows", async (IShowService showService) =>
+{
+    return Results.Ok(await showService.GetAllShowsAsync());
+}).RequireAuthorization();
+
+app.MapGet("/api/shows/{id}", async (string id, IShowService showService) =>
+{
+    var show = await showService.GetShowByIdAsync(id);
+    return show != null ? Results.Ok(show) : Results.NotFound();
+}).RequireAuthorization();
+
+app.MapGet("/api/shows/judge/{judgeId}", async (string judgeId, IShowService showService) =>
+{
+    return Results.Ok(await showService.GetShowsByJudgeIdAsync(judgeId));
+}).RequireAuthorization();
+
+app.MapPost("/api/shows", async (ShowDto showDto, IShowService showService) =>
+{
+    var result = await showService.CreateShowAsync(showDto);
+    return Results.Created($"/api/shows/{result.Id}", result);
+}).RequireAuthorization();
+
+app.MapPut("/api/shows/{id}", async (string id, ShowDto showDto, IShowService showService) =>
+{
+    if (id != showDto.Id)
+        return Results.BadRequest("ID mismatch");
+    
+    var result = await showService.UpdateShowAsync(showDto);
+    return Results.Ok(result);
+}).RequireAuthorization();
+
+app.MapDelete("/api/shows/{id}", async (string id, IShowService showService) =>
+{
+    var result = await showService.DeleteShowAsync(id);
+    return result ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization();
+
+// Additional endpoints for ShowClass, Entry, and Result would follow the same pattern
 
 app.Run();
