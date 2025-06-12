@@ -163,6 +163,12 @@ app.MapDelete("/api/shows/{id}", async (string id, IShowService showService) =>
     return result ? Results.NoContent() : Results.NotFound();
 }).RequireAuthorization();
 
-// Additional endpoints for ShowClass, Entry, and Result would follow the same pattern
+// Near the app.Run() call, add:
+if (app.Environment.IsDevelopment())
+{
+    // Allow connections from any hostname in development
+    app.Urls.Add("https://127.0.0.1:7157");
+    app.Urls.Add("https://*:7157");
+}
 
 app.Run();

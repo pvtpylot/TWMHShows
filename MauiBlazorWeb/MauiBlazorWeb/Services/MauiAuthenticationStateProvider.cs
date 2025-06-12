@@ -59,12 +59,52 @@ namespace MauiBlazorWeb.Services
             NotifyAuthenticationStateChanged(_defaultAuthState);
         }
 
-        public Task LogInAsync(LoginRequest loginModel)
+        public async Task LogInAsync(LoginRequest loginModel)
         {
-            _currentAuthState = LogInAsyncCore(loginModel);
-            NotifyAuthenticationStateChanged(_currentAuthState);
-
-            return _currentAuthState;
+            try
+            {
+                var authState = await LogInAsyncCore(loginModel);
+                _currentAuthState = Task.FromResult(authState);
+        
+                // Only notify if login was successful
+                if (LoginStatus == LoginStatus.Success)
+                {
+                    NotifyAuthenticationStateChanged(_currentAuthState);
+                }
+                else
+                {
+                    // If login failed but didn't throw an exception, notify with default auth state
+                    NotifyAuthenticationStateChanged(_defaultAuthState);
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                // This will catch network-related issues including SSL/certificate problems
+                LoginStatus = LoginStatus.Failed;
+                LoginFailureMessage = $"Network error: {ex.Message}";
+                Debug.WriteLine($"Login network error: {ex.Message}");
+        
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                    // Add more detailed error information for SSL/certificate issues
+                    if (ex.InnerException.Message.Contains("certificate") || 
+                        ex.InnerException.Message.Contains("SSL"))
+                    {
+                        LoginFailureMessage = "SSL/Certificate error. Check your development certificate.";
+                    }
+                }
+        
+                NotifyAuthenticationStateChanged(_defaultAuthState);
+            }
+            catch (Exception ex)
+            {
+                // Catch any other unexpected errors
+                LoginStatus = LoginStatus.Failed;
+                LoginFailureMessage = "An unexpected error occurred.";
+                Debug.WriteLine($"Login general error: {ex}");
+                NotifyAuthenticationStateChanged(_defaultAuthState);
+            }
 
             async Task<AuthenticationState> LogInAsyncCore(LoginRequest loginModel)
             {
@@ -74,43 +114,62 @@ namespace MauiBlazorWeb.Services
         }
 
         private async Task<ClaimsPrincipal> LoginWithProviderAsync(LoginRequest loginModel)
+{
+    var authenticatedUser = _defaultUser;
+    LoginStatus = LoginStatus.None;
+
+    try
+    {
+        // Create HttpClient with detailed debugging
+        var httpClient = HttpClientHelper.GetHttpClient();
+        Debug.WriteLine($"Attempting login to URL: {HttpClientHelper.LoginUrl}");
+        
+        var loginData = new { loginModel.Email, loginModel.Password };
+        Debug.WriteLine($"Login attempt for: {loginModel.Email}");
+        
+        using var response = await httpClient.PostAsJsonAsync(HttpClientHelper.LoginUrl, loginData);
+        
+        Debug.WriteLine($"Login response status: {(int)response.StatusCode} {response.StatusCode}");
+        
+        // Get the full response content for debugging
+        var responseContent = await response.Content.ReadAsStringAsync();
+        Debug.WriteLine($"Response content: {responseContent}");
+
+        LoginStatus = response.IsSuccessStatusCode ? LoginStatus.Success : LoginStatus.Failed;
+
+        if (LoginStatus == LoginStatus.Success)
         {
-            var authenticatedUser = _defaultUser;
-            LoginStatus = LoginStatus.None;
-
-            try
-            {
-                //Call the Login endpoint and pass the email and password
-                var httpClient = HttpClientHelper.GetHttpClient();
-                var loginData = new { loginModel.Email, loginModel.Password };
-                using var response = await httpClient.PostAsJsonAsync(HttpClientHelper.LoginUrl, loginData);
-
-                LoginStatus = response.IsSuccessStatusCode ? LoginStatus.Success : LoginStatus.Failed;
-
-                if (LoginStatus == LoginStatus.Success)
-                {
-                    // Save token to secure storage so the user doesn't have to login every time
-                    var token = await response.Content.ReadAsStringAsync();
-                    _accessToken = await TokenStorage.SaveTokenToSecureStorageAsync(token, loginModel.Email);
-
-                    authenticatedUser = CreateAuthenticatedUser(loginModel.Email);
-                    LoginStatus = LoginStatus.Success;
-                }
-                else
-                {
-                    LoginFailureMessage = "Invalid Email or Password. Please try again.";
-                    LoginStatus = LoginStatus.Failed;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error logging in: {ex}");
-                LoginFailureMessage = "Server error.";
-                LoginStatus = LoginStatus.Failed;
-            }
-
-            return authenticatedUser;
+            // Save token to secure storage so the user doesn't have to login every time
+            _accessToken = await TokenStorage.SaveTokenToSecureStorageAsync(responseContent, loginModel.Email);
+            authenticatedUser = CreateAuthenticatedUser(loginModel.Email);
         }
+        else
+        {
+            LoginFailureMessage = $"Login failed: {(int)response.StatusCode} {response.StatusCode}";
+            
+            if (!string.IsNullOrEmpty(responseContent))
+            {
+                LoginFailureMessage += $" - {responseContent}";
+            }
+            
+            Debug.WriteLine($"Login failure: {LoginFailureMessage}");
+        }
+    }
+    catch (Exception ex)
+    {
+        Debug.WriteLine($"Login exception: {ex.GetType().Name}: {ex.Message}");
+        
+        if (ex.InnerException != null)
+        {
+            Debug.WriteLine($"Inner exception: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+        }
+        
+        LoginFailureMessage = $"Error: {ex.Message}";
+        LoginStatus = LoginStatus.Failed;
+    }
+
+    return authenticatedUser;
+}
 
         private async Task<AuthenticationState> CreateAuthenticationStateFromSecureStorageAsync()
         {
@@ -190,5 +249,29 @@ namespace MauiBlazorWeb.Services
             var identity = new ClaimsIdentity(claims, AuthenticationType);
             return new ClaimsPrincipal(identity);
         }
+        
+#if IOS
+        // Add this method to MauiAuthenticationStateProvider
+        private async Task<bool> TestDirectHttpRequest()
+        {
+            try
+            {
+                // Create a basic HttpClient request without using the helper
+                using var httpClient = new HttpClient(new NSUrlSessionHandler
+                {
+                    TrustOverrideForUrl = (_, url, _) => true
+                });
+                
+                var response = await httpClient.GetAsync("https://localhost:7157/");
+                Debug.WriteLine($"Test direct request result: {response.StatusCode}");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Test direct request failed: {ex.Message}");
+                return false;
+            }
+        }
+#endif
     }
 }

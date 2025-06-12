@@ -41,13 +41,8 @@ namespace MauiBlazorWeb
 // Add the user service registration here
             builder.Services.AddScoped<IUserService, MauiUserService>();
 
-// Register HTTP client for all API services
-            builder.Services.AddScoped<HttpClient>(sp => 
-            {
-                var httpClient = HttpClientHelper.GetHttpClient();
-                httpClient.BaseAddress = new Uri(HttpClientHelper.BaseUrl);
-                return httpClient;
-            });
+// Replace all HttpClient registrations with this:
+            builder.Services.AddScoped(sp => HttpClientHelper.GetHttpClient());
 
 // Register data services
             builder.Services.AddScoped<IDataService, MauiDataService>();
