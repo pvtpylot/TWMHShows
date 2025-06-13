@@ -114,62 +114,63 @@ namespace MauiBlazorWeb.Services
         }
 
         private async Task<ClaimsPrincipal> LoginWithProviderAsync(LoginRequest loginModel)
-{
-    var authenticatedUser = _defaultUser;
-    LoginStatus = LoginStatus.None;
-
-    try
-    {
-        // Create HttpClient with detailed debugging
-        var httpClient = HttpClientHelper.GetHttpClient();
-        Debug.WriteLine($"Attempting login to URL: {HttpClientHelper.LoginUrl}");
-        
-        var loginData = new { loginModel.Email, loginModel.Password };
-        Debug.WriteLine($"Login attempt for: {loginModel.Email}");
-        
-        using var response = await httpClient.PostAsJsonAsync(HttpClientHelper.LoginUrl, loginData);
-        
-        Debug.WriteLine($"Login response status: {(int)response.StatusCode} {response.StatusCode}");
-        
-        // Get the full response content for debugging
-        var responseContent = await response.Content.ReadAsStringAsync();
-        Debug.WriteLine($"Response content: {responseContent}");
-
-        LoginStatus = response.IsSuccessStatusCode ? LoginStatus.Success : LoginStatus.Failed;
-
-        if (LoginStatus == LoginStatus.Success)
         {
-            // Save token to secure storage so the user doesn't have to login every time
-            _accessToken = await TokenStorage.SaveTokenToSecureStorageAsync(responseContent, loginModel.Email);
-            authenticatedUser = CreateAuthenticatedUser(loginModel.Email);
-        }
-        else
-        {
-            LoginFailureMessage = $"Login failed: {(int)response.StatusCode} {response.StatusCode}";
-            
-            if (!string.IsNullOrEmpty(responseContent))
+            var authenticatedUser = _defaultUser;
+            LoginStatus = LoginStatus.None;
+
+            try
             {
-                LoginFailureMessage += $" - {responseContent}";
-            }
-            
-            Debug.WriteLine($"Login failure: {LoginFailureMessage}");
-        }
-    }
-    catch (Exception ex)
-    {
-        Debug.WriteLine($"Login exception: {ex.GetType().Name}: {ex.Message}");
-        
-        if (ex.InnerException != null)
-        {
-            Debug.WriteLine($"Inner exception: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
-        }
-        
-        LoginFailureMessage = $"Error: {ex.Message}";
-        LoginStatus = LoginStatus.Failed;
-    }
+                var httpClient = HttpClientHelper.GetHttpClient();
+                Debug.WriteLine($"Attempting login to URL: {HttpClientHelper.LoginUrl}");
 
-    return authenticatedUser;
-}
+                var formContent = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("email", loginModel.Email),
+                    new KeyValuePair<string, string>("password", loginModel.Password)
+                });
+
+                // Ensure Content-Type is set
+                formContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/x-www-form-urlencoded");
+
+                httpClient.DefaultRequestHeaders.Accept.Clear();
+                httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+                using var response = await httpClient.PostAsync(HttpClientHelper.LoginUrl, formContent);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                Debug.WriteLine($"Login response: {(int)response.StatusCode} {response.StatusCode}");
+                Debug.WriteLine($"Response content: {responseContent}");
+
+                LoginStatus = response.IsSuccessStatusCode ? LoginStatus.Success : LoginStatus.Failed;
+
+                if (LoginStatus == LoginStatus.Success)
+                {
+                    _accessToken = await TokenStorage.SaveTokenToSecureStorageAsync(responseContent, loginModel.Email);
+                    authenticatedUser = CreateAuthenticatedUser(loginModel.Email);
+                }
+                else
+                {
+                    LoginFailureMessage = $"Login failed: {(int)response.StatusCode} {response.StatusCode}";
+                    if (!string.IsNullOrEmpty(responseContent))
+                    {
+                        LoginFailureMessage += $" - {responseContent}";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Login exception: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+
+                LoginFailureMessage = $"Error: {ex.Message}";
+                LoginStatus = LoginStatus.Failed;
+            }
+
+            return authenticatedUser;
+        }
 
         private async Task<AuthenticationState> CreateAuthenticationStateFromSecureStorageAsync()
         {

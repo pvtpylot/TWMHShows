@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace MauiBlazorWeb.Services
@@ -58,6 +59,58 @@ namespace MauiBlazorWeb.Services
             
             Debug.WriteLine(results.ToString());
             return results.ToString();
+        }
+        
+        public static async Task<string> TestLoginEndpoint()
+        {
+            var results = new StringBuilder();
+            try
+            {
+                results.AppendLine($"Testing login endpoint: {HttpClientHelper.LoginUrl}");
+            
+                // Create a handler with certificate validation disabled
+                var handler = HttpClientHelper.GetPlatformHandler();
+                using var client = new HttpClient(handler);
+            
+                // Try a simple OPTIONS request to check CORS
+                var optionsMsg = new HttpRequestMessage(HttpMethod.Options, HttpClientHelper.LoginUrl);
+                try
+                {
+                    var optionsResponse = await client.SendAsync(optionsMsg);
+                    results.AppendLine($"OPTIONS response: {(int)optionsResponse.StatusCode} {optionsResponse.StatusCode}");
+                
+                    // List all headers from the response
+                    foreach (var header in optionsResponse.Headers)
+                    {
+                        results.AppendLine($"Header: {header.Key} = {string.Join(", ", header.Value)}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    results.AppendLine($"OPTIONS error: {ex.Message}");
+                }
+            
+                // Try a simple GET request to check if endpoint exists
+                try
+                {
+                    var getResponse = await client.GetAsync(HttpClientHelper.LoginUrl);
+                    results.AppendLine($"GET response: {(int)getResponse.StatusCode} {getResponse.StatusCode}");
+                }
+                catch (Exception ex)
+                {
+                    results.AppendLine($"GET error: {ex.Message}");
+                }
+            
+                return results.ToString();
+            }
+            catch (Exception ex)
+            {
+                results.AppendLine($"Test error: {ex.Message}");
+                if (ex.InnerException != null)
+                    results.AppendLine($"Inner error: {ex.InnerException.Message}");
+            
+                return results.ToString();
+            }
         }
     }
 }

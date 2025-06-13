@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,18 @@ builder.Services.AddAuthentication(options =>
 {
     // Ensure that unauthenticated clients redirect to the login page rather than receive a 401 by default.
     options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
+});
+
+// Add this near the top of your Program.cs after other service registrations
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowMauiApps", policy =>
+    {
+        policy
+            .AllowAnyOrigin()  
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
 });
 
 builder.Services.AddCascadingAuthenticationState();
@@ -64,6 +77,12 @@ builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSe
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// This makes the server accessible on all network interfaces
+builder.WebHost.ConfigureKestrel(options => {
+    options.ListenAnyIP(5000); // HTTP port
+    options.ListenAnyIP(7157, configure => configure.UseHttps()); // HTTPS port
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -87,6 +106,8 @@ else
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowMauiApps");
 
 app.UseStaticFiles();
 app.UseAntiforgery();
@@ -170,5 +191,64 @@ if (app.Environment.IsDevelopment())
     app.Urls.Add("https://127.0.0.1:7157");
     app.Urls.Add("https://*:7157");
 }
+
+// Add this below your other API endpoints, before app.Run()
+app.MapPost("/identity/mobilelogin", async (HttpContext context, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager) =>
+{
+    try
+    {
+        // Read the request body as form data
+        var form = await context.Request.ReadFormAsync();
+        
+        if (!form.TryGetValue("email", out var email) || !form.TryGetValue("password", out var password))
+        {
+            return Results.BadRequest("Email and password are required");
+        }
+        
+        // Attempt to sign in
+        var result = await signInManager.PasswordSignInAsync(email, password, isPersistent: true, lockoutOnFailure: false);
+        
+        if (result.Succeeded)
+        {
+            // Find the user
+            var user = await userManager.FindByEmailAsync(email);
+            
+            // Generate tokens
+            var refreshToken = Guid.NewGuid().ToString();
+            var accessToken = await userManager.GenerateUserTokenAsync(user, "Default", "APIAccessToken");
+            
+            // Store refresh token in user claims or userstore
+            var refreshClaim = new Claim("RefreshToken", refreshToken);
+            await userManager.AddClaimAsync(user, refreshClaim);
+            
+            // Create response
+            var response = new
+            {
+                tokenType = "Bearer",
+                accessToken = accessToken,
+                expiresIn = 3600, // 1 hour
+                refreshToken = refreshToken
+            };
+            
+            return Results.Ok(response);
+        }
+        else if (result.IsLockedOut)
+        {
+            return Results.StatusCode(423); // Locked
+        }
+        else if (result.RequiresTwoFactor)
+        {
+            return Results.StatusCode(403); // Need 2FA
+        }
+        else
+        {
+            return Results.Unauthorized();
+        }
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Login error: {ex.Message}");
+    }
+}).DisableAntiforgery();
 
 app.Run();
