@@ -1,0 +1,124 @@
+@page "/my-collection"
+@using MauiBlazorWeb.Shared.Models.DTOs
+@using MauiBlazorWeb.Shared.Services
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IDataService DataService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+<PageTitle>My Collection</PageTitle>
+
+<div class="container">
+    <h1>My Model Horse Collection</h1>
+    
+    <div class="mb-4">
+        <a href="new-model-horse" class="btn btn-primary">
+            <i class="oi oi-plus"></i> Add New Model Horse
+        </a>
+    </div>
+
+    @if (loading)
+    {
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    }
+    else if (modelHorses == null || !modelHorses.Any())
+    {
+        <div class="alert alert-info" role="alert">
+            You don't have any model horses in your collection yet. Click the "Add New Model Horse" button to create one.
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            @foreach (var horse in modelHorses)
+            {
+                <div class="col">
+                    <div class="card h-100">
+                        @if (horse.HeroShotImage != null && horse.HeroShotImage.Length > 0)
+                        {
+                            <img src="@($"data:image/jpeg;base64,{Convert.ToBase64String(horse.HeroShotImage)}")" 
+                                 class="card-img-top" alt="@horse.Name" style="height: 200px; object-fit: contain;">
+                        }
+                        else
+                        {
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <span class="text-muted">No image</span>
+                            </div>
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@horse.Name</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">@horse.Breed</h6>
+                            <p class="card-text">@(horse.Description.Length > 100 ? horse.Description.Substring(0, 100) + "..." : horse.Description)</p>
+                            <div class="d-flex justify-content-between">
+                                <a href="@($"edit-model-horse/{horse.Id}")" class="btn btn-outline-primary">
+                                    <i class="oi oi-pencil"></i> Edit
+                                </a>
+                                <button @onclick="() => DeleteModelHorse(horse.Id)" class="btn btn-outline-danger">
+                                    <i class="oi oi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-footer text-muted">
+                            <small>Color: @horse.Color | Size: @horse.Size | Class: @horse.Class</small>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private IEnumerable<UserModelObjectDto>? modelHorses;
+    private bool loading = true;
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            await LoadModelHorses();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+
+    private async Task LoadModelHorses()
+    {
+        loading = true;
+        try
+        {
+            if (!string.IsNullOrEmpty(userId))
+            {
+                modelHorses = await DataService.GetAllUserModelObjectsAsync(userId);
+            }
+        }
+        catch (Exception ex)
+        {
+            // In a production app, you'd want to log this error
+            Console.WriteLine($"Error loading model horses: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task DeleteModelHorse(string id)
+    {
+        if (await DataService.DeleteUserModelObjectAsync(id))
+        {
+            await LoadModelHorses();
+        }
+    }
+}

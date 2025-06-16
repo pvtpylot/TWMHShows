@@ -1,0 +1,212 @@
+@page "/diagnostics"
+@using System.Net.Http
+@using System.Text.Json
+@using System.Diagnostics
+@using MauiBlazorWeb.Services
+@using Microsoft.Extensions.Logging
+@inject MauiAuthenticationStateProvider AuthStateProvider
+@inject ILogger<Diagnostics> Logger
+
+<h3>Connection Diagnostics</h3>
+
+@if (isRunning)
+{
+    <div class="alert alert-info">
+        Running diagnostics... Please wait.
+    </div>
+    <div class="progress">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+             role="progressbar" style="width: 100%"></div>
+    </div>
+}
+else
+{
+    <button class="btn btn-primary" @onclick="RunDiagnostics">Run Diagnostics</button>
+}
+
+@if (diagnosticResults.Any())
+{
+    <h4 class="mt-4">Results:</h4>
+    <div class="list-group mt-3">
+        @foreach (var result in diagnosticResults)
+        {
+            <div class="list-group-item @(result.Success ? "list-group-item-success" : "list-group-item-danger")">
+                <h5 class="mb-1">@result.TestName</h5>
+                <p class="mb-1">@result.Message</p>
+                @if (!string.IsNullOrEmpty(result.Details))
+                {
+                    <small>@result.Details</small>
+                }
+            </div>
+        }
+    </div>
+    
+    <div class="mt-4">
+        <h4>Device Information:</h4>
+        <ul class="list-group">
+            <li class="list-group-item">Platform: @DeviceInfo.Platform</li>
+            <li class="list-group-item">Device Type: @DeviceInfo.DeviceType</li>
+            <li class="list-group-item">Manufacturer: @DeviceInfo.Manufacturer</li>
+            <li class="list-group-item">Model: @DeviceInfo.Model</li>
+            <li class="list-group-item">OS Version: @DeviceInfo.VersionString</li>
+            <li class="list-group-item">Base URL: @HttpClientHelper.BaseUrl</li>
+        </ul>
+    </div>
+}
+
+@code {
+    private bool isRunning;
+    private List<DiagnosticResult> diagnosticResults = new();
+
+    private class DiagnosticResult
+    {
+        public string TestName { get; set; } = "";
+        public bool Success { get; set; }
+        public string Message { get; set; } = "";
+        public string Details { get; set; } = "";
+    }
+
+    private async Task RunDiagnostics()
+    {
+        isRunning = true;
+        diagnosticResults.Clear();
+        StateHasChanged();
+
+        try
+        {
+            // Test 1: Basic connection
+            await TestBasicConnection();
+            
+            // Test 2: Authentication state
+            await TestAuthenticationState();
+            
+            // Test 3: API connection
+            await TestApiConnection();
+        }
+        catch (Exception ex)
+        {
+            diagnosticResults.Add(new DiagnosticResult
+            {
+                TestName = "Unexpected Error",
+                Success = false,
+                Message = $"An error occurred during diagnostics: {ex.Message}",
+                Details = ex.StackTrace ?? ""
+            });
+        }
+        finally
+        {
+            isRunning = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task TestBasicConnection()
+    {
+        try
+        {
+            var httpClient = new HttpClient(new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+            });
+            
+            var baseUrl = HttpClientHelper.BaseUrl;
+            var response = await httpClient.GetAsync(baseUrl);
+            
+            diagnosticResults.Add(new DiagnosticResult
+            {
+                TestName = "Basic Connection",
+                Success = response.IsSuccessStatusCode,
+                Message = response.IsSuccessStatusCode 
+                    ? $"Successfully connected to {baseUrl}" 
+                    : $"Failed to connect to {baseUrl}",
+                Details = $"Status: {response.StatusCode} ({(int)response.StatusCode})"
+            });
+        }
+        catch (Exception ex)
+        {
+            diagnosticResults.Add(new DiagnosticResult
+            {
+                TestName = "Basic Connection",
+                Success = false,
+                Message = $"Connection failed: {ex.Message}",
+                Details = ex.InnerException?.Message ?? ""
+            });
+        }
+    }
+    
+    private async Task TestAuthenticationState()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+            var userName = authState.User.Identity?.Name ?? "not authenticated";
+            
+            var accessTokenInfo = await AuthStateProvider.GetAccessTokenInfoAsync();
+            
+            diagnosticResults.Add(new DiagnosticResult
+            {
+                TestName = "Authentication State",
+                Success = isAuthenticated,
+                Message = isAuthenticated
+                    ? $"Authenticated as {userName}"
+                    : "Not authenticated",
+                Details = accessTokenInfo != null
+                    ? $"Token expires: {accessTokenInfo.AccessTokenExpiration}"
+                    : "No token available"
+            });
+        }
+        catch (Exception ex)
+        {
+            diagnosticResults.Add(new DiagnosticResult
+            {
+                TestName = "Authentication State",
+                Success = false,
+                Message = $"Authentication check failed: {ex.Message}",
+                Details = ex.InnerException?.Message ?? ""
+            });
+        }
+    }
+    
+    private async Task TestApiConnection()
+    {
+        try
+        {
+            var httpClient = HttpClientHelper.GetHttpClient();
+            
+            var accessTokenInfo = await AuthStateProvider.GetAccessTokenInfoAsync();
+            if (accessTokenInfo != null)
+            {
+                httpClient.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue(
+                        accessTokenInfo.LoginResponse.TokenType,
+                        accessTokenInfo.LoginResponse.AccessToken);
+            }
+            
+            var response = await httpClient.GetAsync($"{HttpClientHelper.BaseUrl}/api/weather");
+            var content = await response.Content.ReadAsStringAsync();
+            
+            diagnosticResults.Add(new DiagnosticResult
+            {
+                TestName = "API Connection",
+                Success = response.IsSuccessStatusCode,
+                Message = response.IsSuccessStatusCode
+                    ? "Weather API responded successfully"
+                    : $"API request failed: {response.StatusCode}",
+                Details = response.IsSuccessStatusCode
+                    ? $"Received {content.Length} characters of data"
+                    : content
+            });
+        }
+        catch (Exception ex)
+        {
+            diagnosticResults.Add(new DiagnosticResult
+            {
+                TestName = "API Connection",
+                Success = false,
+                Message = $"API connection failed: {ex.Message}",
+                Details = ex.InnerException?.Message ?? ""
+            });
+        }
+    }
+}

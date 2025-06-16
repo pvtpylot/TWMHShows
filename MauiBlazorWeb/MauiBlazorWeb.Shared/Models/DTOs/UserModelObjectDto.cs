@@ -19,5 +19,17 @@ namespace MauiBlazorWeb.Shared.Models.DTOs
         public string Notes { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+
+        // Store the hero shot image as a byte array
+        public byte[]? HeroShotImage { get; set; }
+
+        // Store show images as a list of byte arrays
+        public List<ShowImageDto> ShowImages { get; set; } = new();
+    }
+
+    public class ShowImageDto
+    {
+        public int Id { get; set; }
+        public byte[] ImageData { get; set; } = [];
     }
 }

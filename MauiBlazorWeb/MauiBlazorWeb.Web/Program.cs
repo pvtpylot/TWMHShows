@@ -251,4 +251,26 @@ app.MapPost("/identity/mobilelogin", async (HttpContext context, UserManager<App
     }
 }).DisableAntiforgery();
 
+// Add these API endpoints after the existing userModelObjects endpoints
+app.MapPost("/api/userModelObjects", async (IDataService dataService, UserModelObjectDto userModelObjectDto) =>
+{
+    var result = await dataService.CreateUserModelObjectAsync(userModelObjectDto);
+    return Results.Created($"/api/userModelObjects/{result.Id}", result);
+}).RequireAuthorization();
+
+app.MapPut("/api/userModelObjects/{id}", async (string id, UserModelObjectDto userModelObjectDto, IDataService dataService) =>
+{
+    if (id != userModelObjectDto.Id)
+        return Results.BadRequest("ID mismatch");
+    
+    var result = await dataService.UpdateUserModelObjectAsync(id, userModelObjectDto);
+    return result.Id != null ? Results.Ok(result) : Results.NotFound();
+}).RequireAuthorization();
+
+app.MapDelete("/api/userModelObjects/{id}", async (string id, IDataService dataService) =>
+{
+    var result = await dataService.DeleteUserModelObjectAsync(id);
+    return result ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization();
+
 app.Run();

@@ -29,6 +29,40 @@ namespace MauiBlazorWeb.Web.Services
             return entity != null ? MapToDto(entity) : new UserModelObjectDto();
         }
 
+        public async Task<UserModelObjectDto> CreateUserModelObjectAsync(UserModelObjectDto userModelObjectDto)
+        {
+            var entity = MapToEntity(userModelObjectDto);
+            var result = await _repository.CreateAsync(entity);
+            return MapToDto(result);
+        }
+
+        public async Task<UserModelObjectDto> UpdateUserModelObjectAsync(string id, UserModelObjectDto userModelObjectDto)
+        {
+            var existingEntity = await _repository.GetByIdAsync(id);
+            if (existingEntity == null)
+            {
+                return new UserModelObjectDto();
+            }
+
+            // Update properties
+            existingEntity.Name = userModelObjectDto.Name;
+            existingEntity.Description = userModelObjectDto.Description;
+            existingEntity.Color = userModelObjectDto.Color;
+            existingEntity.Size = userModelObjectDto.Size;
+            existingEntity.Class = userModelObjectDto.Class;
+            existingEntity.Breed = userModelObjectDto.Breed;
+            existingEntity.Notes = userModelObjectDto.Notes;
+            existingEntity.HeroShotImage = userModelObjectDto.HeroShotImage;
+
+            var result = await _repository.UpdateAsync(existingEntity);
+            return MapToDto(result);
+        }
+
+        public async Task<bool> DeleteUserModelObjectAsync(string id)
+        {
+            return await _repository.DeleteAsync(id);
+        }
+
         private static UserModelObjectDto MapToDto(UserModelObject entity)
         {
             return new UserModelObjectDto
@@ -44,7 +78,32 @@ namespace MauiBlazorWeb.Web.Services
                 Breed = entity.Breed ?? string.Empty,
                 Notes = entity.Notes ?? string.Empty,
                 CreatedAt = entity.CreatedAt,
-                UpdatedAt = entity.UpdatedAt
+                UpdatedAt = entity.UpdatedAt,
+                HeroShotImage = entity.HeroShotImage,
+                ShowImages = entity.ShowImages.Select(si => new ShowImageDto 
+                { 
+                    Id = si.Id, 
+                    ImageData = si.ImageData 
+                }).ToList()
+            };
+        }
+        
+        private static UserModelObject MapToEntity(UserModelObjectDto dto)
+        {
+            return new UserModelObject
+            {
+                Id = string.IsNullOrEmpty(dto.Id) ? Int32.Parse(Guid.NewGuid().ToString()) : int.Parse(dto.Id),
+                TWEntryId = dto.TWEntryId,
+                Name = dto.Name,
+                Description = dto.Description,
+                ApplicationUserId = dto.ApplicationUserId,
+                Color = dto.Color,
+                Size = dto.Size,
+                Class = dto.Class,
+                Breed = dto.Breed,
+                Notes = dto.Notes,
+                HeroShotImage = dto.HeroShotImage,
+                CreatedAt = dto.CreatedAt == default ? DateTime.UtcNow : dto.CreatedAt
             };
         }
     }

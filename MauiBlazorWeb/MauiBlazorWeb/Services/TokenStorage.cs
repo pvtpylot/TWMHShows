@@ -1,68 +1,107 @@
+using System;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Threading.Tasks;
 using MauiBlazorWeb.Models;
 
 namespace MauiBlazorWeb.Services
 {
-    /// <summary>
-    /// This class is used to store and retrieve the access token from the SecureStorage.
-    /// </summary>
-    internal class TokenStorage
+    public interface ITokenStorage
     {
-        private const string StorageKeyName = "access_token";
+        Task<AccessTokenInfo?> GetTokenAsync();
+        Task<AccessTokenInfo> SaveTokenAsync(string tokenJson, string email);
+        Task RemoveTokenAsync();
+    }
 
+    public class TokenStorage : ITokenStorage
+    {
+        private const string TokenKey = "auth_token";
+        private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        public async Task<AccessTokenInfo?> GetTokenAsync()
+        {
+            try
+            {
+                var tokenJson = await SecureStorage.GetAsync(TokenKey);
+                
+                if (string.IsNullOrEmpty(tokenJson))
+                {
+                    Debug.WriteLine("No token found in secure storage");
+                    return null;
+                }
+                
+                Debug.WriteLine("Token found in secure storage, deserializing");
+                return JsonSerializer.Deserialize<AccessTokenInfo>(tokenJson, _jsonOptions);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error retrieving token: {ex.Message}");
+                await RemoveTokenAsync();
+                return null;
+            }
+        }
+
+        public async Task<AccessTokenInfo> SaveTokenAsync(string tokenJson, string email)
+        {
+            try
+            {
+                Debug.WriteLine("Saving token to secure storage");
+                
+                var loginResponse = JsonSerializer.Deserialize<LoginResponse>(tokenJson, _jsonOptions) 
+                    ?? throw new InvalidOperationException("Failed to deserialize login response");
+
+                // Calculate expiration (typically 1 hour from now)
+                var expiresIn = loginResponse.ExpiresIn > 0 ? loginResponse.ExpiresIn : 3600;
+                var expirationTime = DateTime.UtcNow.AddSeconds(expiresIn);
+                
+                var tokenInfo = new AccessTokenInfo
+                {
+                    LoginResponse = loginResponse,
+                    AccessTokenExpiration = expirationTime,
+                    Email = email
+                };
+
+                // Save the full token info
+                var tokenInfoJson = JsonSerializer.Serialize(tokenInfo, _jsonOptions);
+                await SecureStorage.SetAsync(TokenKey, tokenInfoJson);
+                
+                Debug.WriteLine($"Token saved successfully. Expires at: {expirationTime}");
+                return tokenInfo;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error saving token: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task RemoveTokenAsync()
+        {
+            Debug.WriteLine("Removing token from secure storage");
+            SecureStorage.Remove(TokenKey);
+            await Task.CompletedTask;
+        }
+        
+        // Static methods for backward compatibility
+        public static Task<AccessTokenInfo?> GetTokenFromSecureStorageAsync()
+        {
+            var storage = new TokenStorage();
+            return storage.GetTokenAsync();
+        }
+        
+        public static Task<AccessTokenInfo> SaveTokenToSecureStorageAsync(string tokenJson, string email)
+        {
+            var storage = new TokenStorage();
+            return storage.SaveTokenAsync(tokenJson, email);
+        }
+        
         public static void RemoveToken()
         {
-            SecureStorage.Remove(StorageKeyName);
-        }
-
-        public static async Task<AccessTokenInfo?> GetTokenFromSecureStorageAsync()
-        {
-            try
-            {
-                var token = await SecureStorage.GetAsync(StorageKeyName);
-
-                if (!string.IsNullOrEmpty(token))
-                {
-                    return JsonSerializer.Deserialize<AccessTokenInfo>(token);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Unable to retrieve AccessTokenInfo from SecureStorage." + ex);
-            }
-            return null;
-        }
-
-        public static async Task<AccessTokenInfo?> SaveTokenToSecureStorageAsync(string token, string email)
-        {
-            AccessTokenInfo? accessToken = null;
-            try
-            {
-                if (!string.IsNullOrEmpty(token) && !string.IsNullOrEmpty(email))
-                {
-                    var loginToken = JsonSerializer.Deserialize<LoginResponse>(token);
-                    if (loginToken != null)
-                    {
-                        DateTime tokenExpiration = DateTime.UtcNow.AddSeconds(loginToken.ExpiresIn);
-
-                        accessToken = new AccessTokenInfo
-                        {
-                            LoginResponse = loginToken,
-                            Email = email,
-                            AccessTokenExpiration = tokenExpiration
-                        };
-
-                        await SecureStorage.SetAsync(StorageKeyName, JsonSerializer.Serialize<AccessTokenInfo>(accessToken));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Unable to save AccessTokenInfo to SecureStorage." + ex);
-                accessToken = null;
-            }
-            return accessToken;
+            var storage = new TokenStorage();
+            storage.RemoveTokenAsync().Wait();
         }
     }
 }

@@ -1,98 +1,63 @@
-using System.Text;
+using System;
+using System.Diagnostics;
+using System.Net.Http;
 
-internal class HttpClientHelper
+namespace MauiBlazorWeb.Services
 {
-    private static string _baseUrl = "https://localhost:7157/";
-    public static string BaseUrl
+    public static class HttpClientHelper
     {
-        get
+        // Use local IP for the emulator to access the host machine
+        private static string GetBaseUrl()
         {
-#if DEBUG
+            // Special case for Android - use 10.0.2.2 for localhost
             if (DeviceInfo.Platform == DevicePlatform.Android)
             {
-                _baseUrl = _baseUrl.Replace("localhost", "10.0.2.2");
+                return "https://10.0.2.2:7157";
             }
-            else if (DeviceInfo.Platform == DevicePlatform.iOS)
-            {
-                bool isSimulator = DeviceInfo.DeviceType == DeviceType.Virtual;
-                if (isSimulator)
-                {
-                    // Use the correct port for your server
-                    _baseUrl = "https://10.0.0.246:7157/";
-                }
-                else
-                {
-                    // Physical device - use the IP address and correct port
-                    _baseUrl = "https://10.0.0.246:7157/";
-                }
-            }
-#endif
-            return _baseUrl;
+
+            // For iOS simulator or physical devices
+            return "https://localhost:7157";
         }
-    }
-    
-    public static string LoginUrl => $"{BaseUrl}identity/mobilelogin";
-    public static string RefreshUrl => $"{BaseUrl}identity/refresh";
-    public static string WeatherUrl => $"{BaseUrl}api/weather";
 
-    public static HttpClient GetHttpClient()
-    {
-#if WINDOWS || MACCATALYST
-        return new HttpClient();
-#else
-        return new HttpClient(GetPlatformHandler());
-#endif
-    }
+        public static string BaseUrl => GetBaseUrl();
+        public static string LoginUrl => $"{BaseUrl}/identity/mobilelogin";
+        public static string RefreshUrl => $"{BaseUrl}/identity/refresh";
+        public static string WeatherUrl => $"{BaseUrl}/api/weather";
 
-    public static HttpMessageHandler GetPlatformHandler()
-    {
+        public static HttpClient GetHttpClient()
+        {
 #if ANDROID
-        var handler = new Xamarin.Android.Net.AndroidMessageHandler();
-        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
-        return handler;
+            // Android specific handler with certificate validation disabled for development
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+            var httpClient = new HttpClient(handler);
+            Debug.WriteLine($"Created Android HttpClient with custom handler for: {BaseUrl}");
 #elif IOS
-        // Enhanced handler for iOS with better logging
-        var handler = new HttpClientHandler
-        {
-            // Always trust the certificate for development
-            ServerCertificateCustomValidationCallback = (sender, cert, chain, errors) => {
-                Console.WriteLine($"iOS SSL validation bypassed. Cert: {cert?.Subject}, Errors: {errors}");
-                return true;
-            },
-            AllowAutoRedirect = true
-        };
-        return handler;
+            // iOS specific handler with certificate validation disabled for development
+            var handler = new NSUrlSessionHandler
+            {
+                TrustOverrideForUrl = (_, _, _) => true
+            };
+            var httpClient = new HttpClient(handler);
+            Debug.WriteLine($"Created iOS HttpClient with custom handler for: {BaseUrl}");
 #else
-        throw new PlatformNotSupportedException("Only Android and iOS supported.");
+            // Default handler for other platforms
+            var httpClient = new HttpClient();
+            Debug.WriteLine($"Created default HttpClient for: {BaseUrl}");
 #endif
-    }
 
-    public static async Task<string> TestServerConnectivity()
-    {
-        var result = new StringBuilder();
-        
-        try
-        {
-            result.AppendLine($"Testing connectivity to {BaseUrl}");
-            result.AppendLine($"Platform: {DeviceInfo.Platform}, DeviceType: {DeviceInfo.DeviceType}");
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
             
-            var handler = GetPlatformHandler();
-            using var client = new HttpClient(handler);
-            client.Timeout = TimeSpan.FromSeconds(10);
+            // Clear any previous headers
+            httpClient.DefaultRequestHeaders.Clear();
             
-            // First try a HEAD request which is lightweight
-            using var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, BaseUrl));
-            result.AppendLine($"Server responded: {(int)response.StatusCode} {response.StatusCode}");
+            // Add common headers
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "MauiBlazorWebApp");
+            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
             
-            return result.ToString();
-        }
-        catch (Exception ex)
-        {
-            result.AppendLine($"Error: {ex.Message}");
-            if (ex.InnerException != null)
-                result.AppendLine($"Inner Error: {ex.InnerException.Message}");
-            
-            return result.ToString();
+            return httpClient;
         }
     }
 }

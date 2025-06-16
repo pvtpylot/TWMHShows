@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
@@ -37,6 +38,10 @@ namespace MauiBlazorWeb.Services
                 catch (Exception ex)
                 {
                     results.AppendLine($"HTTP client error: {ex.Message}");
+                    if (ex.InnerException != null)
+                    {
+                        results.AppendLine($"Inner exception: {ex.InnerException.Message}");
+                    }
                 }
                 
                 // Try TCP connection
@@ -50,6 +55,10 @@ namespace MauiBlazorWeb.Services
                 catch (Exception ex)
                 {
                     results.AppendLine($"TCP connection error: {ex.Message}");
+                    if (ex.InnerException != null)
+                    {
+                        results.AppendLine($"Inner exception: {ex.InnerException.Message}");
+                    }
                 }
             }
             catch (Exception ex)
@@ -67,18 +76,17 @@ namespace MauiBlazorWeb.Services
             try
             {
                 results.AppendLine($"Testing login endpoint: {HttpClientHelper.LoginUrl}");
-            
-                // Create a handler with certificate validation disabled
-                var handler = HttpClientHelper.GetPlatformHandler();
-                using var client = new HttpClient(handler);
-            
+                
+                // Use the existing HttpClient method instead of trying to get a platform handler
+                var client = HttpClientHelper.GetHttpClient();
+                
                 // Try a simple OPTIONS request to check CORS
                 var optionsMsg = new HttpRequestMessage(HttpMethod.Options, HttpClientHelper.LoginUrl);
                 try
                 {
                     var optionsResponse = await client.SendAsync(optionsMsg);
                     results.AppendLine($"OPTIONS response: {(int)optionsResponse.StatusCode} {optionsResponse.StatusCode}");
-                
+                    
                     // List all headers from the response
                     foreach (var header in optionsResponse.Headers)
                     {
@@ -88,27 +96,70 @@ namespace MauiBlazorWeb.Services
                 catch (Exception ex)
                 {
                     results.AppendLine($"OPTIONS error: {ex.Message}");
+                    if (ex.InnerException != null)
+                    {
+                        results.AppendLine($"Inner exception: {ex.InnerException.Message}");
+                    }
                 }
-            
+                
                 // Try a simple GET request to check if endpoint exists
                 try
                 {
                     var getResponse = await client.GetAsync(HttpClientHelper.LoginUrl);
                     results.AppendLine($"GET response: {(int)getResponse.StatusCode} {getResponse.StatusCode}");
+                    
+                    // Add content if available
+                    if (getResponse.Content != null)
+                    {
+                        var content = await getResponse.Content.ReadAsStringAsync();
+                        if (!string.IsNullOrEmpty(content) && content.Length < 1000)
+                        {
+                            results.AppendLine($"Content: {content}");
+                        }
+                        else
+                        {
+                            results.AppendLine($"Content length: {content?.Length ?? 0} chars");
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
                     results.AppendLine($"GET error: {ex.Message}");
+                    if (ex.InnerException != null)
+                    {
+                        results.AppendLine($"Inner exception: {ex.InnerException.Message}");
+                    }
                 }
-            
+                
+                // Test a minimal POST request
+                try
+                {
+                    var testData = new FormUrlEncodedContent(new[]
+                    {
+                        new KeyValuePair<string, string>("email", "test@example.com"),
+                        new KeyValuePair<string, string>("password", "password")
+                    });
+                    
+                    var postResponse = await client.PostAsync(HttpClientHelper.LoginUrl, testData);
+                    results.AppendLine($"POST response: {(int)postResponse.StatusCode} {postResponse.StatusCode}");
+                }
+                catch (Exception ex)
+                {
+                    results.AppendLine($"POST error: {ex.Message}");
+                    if (ex.InnerException != null)
+                    {
+                        results.AppendLine($"Inner exception: {ex.InnerException.Message}");
+                    }
+                }
+                
                 return results.ToString();
             }
             catch (Exception ex)
             {
                 results.AppendLine($"Test error: {ex.Message}");
                 if (ex.InnerException != null)
-                    results.AppendLine($"Inner error: {ex.InnerException.Message}");
-            
+                    results.AppendLine($"Inner exception: {ex.InnerException.Message}");
+                
                 return results.ToString();
             }
         }
