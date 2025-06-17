@@ -20,11 +20,18 @@ namespace MauiBlazorWeb.Services
         private static ClaimsPrincipal _defaultUser = new ClaimsPrincipal(new ClaimsIdentity());
         private static Task<AuthenticationState> _defaultAuthState = Task.FromResult(new AuthenticationState(_defaultUser));
 
+        private readonly ITokenStorage _tokenStorage;
+
         public LoginStatus LoginStatus { get; set; } = LoginStatus.None;
         public string LoginFailureMessage { get; set; } = "";
 
         private Task<AuthenticationState> _currentAuthState = _defaultAuthState;
         private AccessTokenInfo? _accessToken;
+
+        public MauiAuthenticationStateProvider(ITokenStorage tokenStorage)
+        {
+            _tokenStorage = tokenStorage;
+        }
 
         public override Task<AuthenticationState> GetAuthenticationStateAsync()
         {
@@ -50,12 +57,12 @@ namespace MauiBlazorWeb.Services
             return null;
         }
 
-        public void Logout()
+        public async Task Logout()
         {
             LoginStatus = LoginStatus.None;
             _currentAuthState = _defaultAuthState;
             _accessToken = null;
-            TokenStorage.RemoveToken();
+            await _tokenStorage.RemoveTokenAsync();
             NotifyAuthenticationStateChanged(_defaultAuthState);
         }
 
@@ -139,6 +146,22 @@ namespace MauiBlazorWeb.Services
             }
         }
 
+        // Method to check if user has a valid session without doing a full login
+        public async Task<bool> HasValidSessionAsync()
+        {
+            return await _tokenStorage.HasValidTokenAsync();
+        }
+
+        // Get previously used email from secure storage
+        public async Task<string?> GetSavedEmailAsync()
+        {
+            if (_tokenStorage is TokenStorage concreteStorage)
+            {
+                return await concreteStorage.GetRememberedEmailAsync();
+            }
+            return null;
+        }
+
         // Modify the LoginWithProviderAsync method to include more debugging and handle Android-specific issues
         private async Task<ClaimsPrincipal> LoginWithProviderAsync(LoginRequest loginModel)
         {
@@ -190,7 +213,7 @@ namespace MauiBlazorWeb.Services
                 if (LoginStatus == LoginStatus.Success)
                 {
                     Debug.WriteLine("Login successful, saving token");
-                    _accessToken = await TokenStorage.SaveTokenToSecureStorageAsync(responseContent, loginModel.Email);
+                    _accessToken = await _tokenStorage.SaveTokenAsync(responseContent, loginModel.Email);
                     authenticatedUser = CreateAuthenticatedUser(loginModel.Email);
                     Debug.WriteLine("Authentication state created successfully");
                 }
@@ -264,7 +287,7 @@ namespace MauiBlazorWeb.Services
 
                 if (_accessToken is null || thirtyMinutesFromNow > _accessToken.AccessTokenExpiration)
                 {
-                    _accessToken = await TokenStorage.GetTokenFromSecureStorageAsync();
+                    _accessToken = await _tokenStorage.GetTokenAsync();
                 }
 
                 if (_accessToken is null)
@@ -300,7 +323,7 @@ namespace MauiBlazorWeb.Services
                     using var response = await httpClient.PostAsJsonAsync(HttpClientHelper.RefreshUrl, refreshData);
                     response.EnsureSuccessStatusCode();
                     var token = await response.Content.ReadAsStringAsync();
-                    _accessToken = await TokenStorage.SaveTokenToSecureStorageAsync(token, email);
+                    _accessToken = await _tokenStorage.SaveTokenAsync(token, email);
                     return true;
                 }
 

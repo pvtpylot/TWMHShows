@@ -1,4 +1,7 @@
 ﻿@inherits LayoutComponentBase
+@using MauiBlazorWeb.Services
+@inject MauiAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
 
 <div class="page">
     <div class="sidebar">
@@ -7,7 +10,15 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <AuthorizeView>
+                <Authorized>
+                    <span>Hello, @context.User.Identity?.Name!</span>
+                    <a href="/logout" class="ms-2">Logout</a>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/login">Login</a>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">
@@ -16,8 +27,10 @@
     </main>
 </div>
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Force authentication state provider to check token on startup
+        await AuthStateProvider.GetAuthenticationStateAsync();
+    }
+}

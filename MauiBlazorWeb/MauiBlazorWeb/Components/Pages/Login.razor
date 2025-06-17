@@ -2,6 +2,7 @@
 @inject NavigationManager Navigation
 @inject MauiAuthenticationStateProvider AuthStateProvider
 @using MauiBlazorWeb.Services
+@using MauiBlazorWeb.Models
 
 <h3>Login to Access Application</h3>
 
@@ -23,6 +24,12 @@
         <label>Password</label>
         <InputText id="password" type="password" @bind-Value="LoginModel.Password" class="form-control" />
     </div>
+    <div class="form-group my-2">
+        <label>
+            <InputCheckbox @bind-Value="RememberMe" />
+            Remember me
+        </label>
+    </div>
     <div class="form-group mt-1">
         <button type="submit" class="btn btn-primary w-100">Login Now</button>
     </div>
@@ -34,12 +41,27 @@
     private LoginRequest LoginModel { get; set; } = new();
     private bool loginFailureHidden = true;
     private string? diagnosticInfo;
+    private bool RememberMe { get; set; } = true;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (AuthStateProvider.LoginStatus == LoginStatus.Failed)
         {
             loginFailureHidden = false;
+        }
+
+        // Check if user is already logged in
+        if (await AuthStateProvider.HasValidSessionAsync())
+        {
+            Navigation.NavigateTo(""); // Redirect to home if already logged in
+            return;
+        }
+
+        // Auto-populate saved email if available
+        var savedEmail = await AuthStateProvider.GetSavedEmailAsync();
+        if (!string.IsNullOrEmpty(savedEmail))
+        {
+            LoginModel.Email = savedEmail;
         }
     }
 

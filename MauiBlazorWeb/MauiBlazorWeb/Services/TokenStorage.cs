@@ -11,11 +11,13 @@ namespace MauiBlazorWeb.Services
         Task<AccessTokenInfo?> GetTokenAsync();
         Task<AccessTokenInfo> SaveTokenAsync(string tokenJson, string email);
         Task RemoveTokenAsync();
+        Task<bool> HasValidTokenAsync();
     }
 
     public class TokenStorage : ITokenStorage
     {
         private const string TokenKey = "auth_token";
+        private const string RememberMeKey = "remember_me_email";
         private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
@@ -68,6 +70,9 @@ namespace MauiBlazorWeb.Services
                 var tokenInfoJson = JsonSerializer.Serialize(tokenInfo, _jsonOptions);
                 await SecureStorage.SetAsync(TokenKey, tokenInfoJson);
                 
+                // Save the email address for remember me functionality
+                await SecureStorage.SetAsync(RememberMeKey, email);
+                
                 Debug.WriteLine($"Token saved successfully. Expires at: {expirationTime}");
                 return tokenInfo;
             }
@@ -83,6 +88,30 @@ namespace MauiBlazorWeb.Services
             Debug.WriteLine("Removing token from secure storage");
             SecureStorage.Remove(TokenKey);
             await Task.CompletedTask;
+        }
+        
+        public async Task<bool> HasValidTokenAsync()
+        {
+            try
+            {
+                var token = await GetTokenAsync();
+                if (token == null)
+                {
+                    return false;
+                }
+                
+                // Check if token is still valid
+                return DateTime.UtcNow < token.AccessTokenExpiration;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        public async Task<string?> GetRememberedEmailAsync()
+        {
+            return await SecureStorage.GetAsync(RememberMeKey);
         }
         
         // Static methods for backward compatibility
