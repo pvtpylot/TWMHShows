@@ -146,7 +146,6 @@ app.MapGet("/api/userModelObjects/{id}", async (IDataService dataService, string
     return result != null ? Results.Ok(result) : Results.NotFound();
 }).RequireAuthorization();
 
-// Show API endpoints
 app.MapGet("/api/shows", async (IShowService showService) =>
 {
     return Results.Ok(await showService.GetAllShowsAsync());
@@ -192,7 +191,6 @@ if (app.Environment.IsDevelopment())
     app.Urls.Add("https://*:7157");
 }
 
-// Add this below your other API endpoints, before app.Run()
 app.MapPost("/identity/mobilelogin", async (HttpContext context, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager) =>
 {
     try

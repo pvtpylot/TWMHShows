@@ -92,7 +92,7 @@ namespace MauiBlazorWeb.Web.Services
         {
             return new UserModelObject
             {
-                Id = string.IsNullOrEmpty(dto.Id) ? Int32.Parse(Guid.NewGuid().ToString()) : int.Parse(dto.Id),
+                Id = string.IsNullOrEmpty(dto.Id) ? 0 : int.TryParse(dto.Id, out var id) ? id : 0,
                 TWEntryId = dto.TWEntryId,
                 Name = dto.Name,
                 Description = dto.Description,
