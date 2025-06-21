@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using MauiBlazorWeb.Web.Services.Mappers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +56,9 @@ builder.Services.AddScoped<IShowRepository, ShowRepository>();
 builder.Services.AddScoped<IShowClassRepository, ShowClassRepository>();
 builder.Services.AddScoped<IEntryRepository, EntryRepository>();
 builder.Services.AddScoped<IResultRepository, ResultRepository>();
+
+// Register mappers
+builder.Services.AddScoped<IEntityMapper<UserModelObject, UserModelObjectDto>, UserModelObjectMapper>();
 
 // Register services
 builder.Services.AddScoped<IShowService, ShowService>();

@@ -17,20 +17,27 @@ namespace MauiBlazorWeb.Services
         private const string AuthenticationType = "Custom authentication";
         private const int TokenExpirationBuffer = 30; //minutes
 
-        private static ClaimsPrincipal _defaultUser = new ClaimsPrincipal(new ClaimsIdentity());
-        private static Task<AuthenticationState> _defaultAuthState = Task.FromResult(new AuthenticationState(_defaultUser));
+        private static readonly ClaimsPrincipal _defaultUser = new ClaimsPrincipal(new ClaimsIdentity());
+        private static readonly Task<AuthenticationState> _defaultAuthState = Task.FromResult(new AuthenticationState(_defaultUser));
 
         private readonly ITokenStorage _tokenStorage;
+        private readonly INetworkDiagnostics _networkDiagnostics;
+        private readonly IAuthenticationService _authService;
 
-        public LoginStatus LoginStatus { get; set; } = LoginStatus.None;
-        public string LoginFailureMessage { get; set; } = "";
+        public LoginStatus LoginStatus { get; private set; } = LoginStatus.None;
+        public string LoginFailureMessage { get; private set; } = "";
 
         private Task<AuthenticationState> _currentAuthState = _defaultAuthState;
         private AccessTokenInfo? _accessToken;
 
-        public MauiAuthenticationStateProvider(ITokenStorage tokenStorage)
+        public MauiAuthenticationStateProvider(
+            ITokenStorage tokenStorage,
+            INetworkDiagnostics networkDiagnostics,
+            IAuthenticationService authService)
         {
             _tokenStorage = tokenStorage;
+            _networkDiagnostics = networkDiagnostics;
+            _authService = authService;
         }
 
         public override Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -53,7 +60,7 @@ namespace MauiBlazorWeb.Services
                 return _accessToken;
             }
 
-            Logout();
+            await Logout();
             return null;
         }
 
@@ -87,30 +94,12 @@ namespace MauiBlazorWeb.Services
             catch (HttpRequestException ex)
             {
                 // This will catch network-related issues including SSL/certificate problems
-                LoginStatus = LoginStatus.Failed;
-                LoginFailureMessage = $"Network error: {ex.Message}";
-                Debug.WriteLine($"Login network error: {ex.Message}");
-        
-                if (ex.InnerException != null)
-                {
-                    Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
-                    // Add more detailed error information for SSL/certificate issues
-                    if (ex.InnerException.Message.Contains("certificate") || 
-                        ex.InnerException.Message.Contains("SSL"))
-                    {
-                        LoginFailureMessage = "SSL/Certificate error. Check your development certificate.";
-                    }
-                }
-        
-                NotifyAuthenticationStateChanged(_defaultAuthState);
+                HandleNetworkException(ex);
             }
             catch (Exception ex)
             {
                 // Catch any other unexpected errors
-                LoginStatus = LoginStatus.Failed;
-                LoginFailureMessage = "An unexpected error occurred.";
-                Debug.WriteLine($"Login general error: {ex}");
-                NotifyAuthenticationStateChanged(_defaultAuthState);
+                HandleGeneralException(ex);
             }
 
             async Task<AuthenticationState> LogInAsyncCore(LoginRequest loginModel)
@@ -120,30 +109,32 @@ namespace MauiBlazorWeb.Services
             }
         }
 
-        // Add this method to perform a diagnostic test on startup
-        public async Task<bool> PerformDiagnosticTest()
+        private void HandleNetworkException(HttpRequestException ex)
         {
-            try
+            LoginStatus = LoginStatus.Failed;
+            LoginFailureMessage = $"Network error: {ex.Message}";
+            Debug.WriteLine($"Login network error: {ex.Message}");
+
+            if (ex.InnerException != null)
             {
-                Debug.WriteLine("Performing diagnostic connection test...");
-                var httpClient = HttpClientHelper.GetHttpClient();
-                Debug.WriteLine($"Testing connection to: {HttpClientHelper.BaseUrl}");
-            
-                // Try a simple GET request to the base URL
-                var response = await httpClient.GetAsync(HttpClientHelper.BaseUrl);
-                Debug.WriteLine($"Diagnostic test response: {(int)response.StatusCode} {response.StatusCode}");
-            
-                return response.IsSuccessStatusCode;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Diagnostic test failed: {ex.Message}");
-                if (ex.InnerException != null)
+                Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                // Add more detailed error information for SSL/certificate issues
+                if (ex.InnerException.Message.Contains("certificate") || 
+                    ex.InnerException.Message.Contains("SSL"))
                 {
-                    Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                    LoginFailureMessage = "SSL/Certificate error. Check your development certificate.";
                 }
-                return false;
             }
+
+            NotifyAuthenticationStateChanged(_defaultAuthState);
+        }
+
+        private void HandleGeneralException(Exception ex)
+        {
+            LoginStatus = LoginStatus.Failed;
+            LoginFailureMessage = "An unexpected error occurred.";
+            Debug.WriteLine($"Login general error: {ex}");
+            NotifyAuthenticationStateChanged(_defaultAuthState);
         }
 
         // Method to check if user has a valid session without doing a full login
@@ -155,14 +146,15 @@ namespace MauiBlazorWeb.Services
         // Get previously used email from secure storage
         public async Task<string?> GetSavedEmailAsync()
         {
-            if (_tokenStorage is TokenStorage concreteStorage)
-            {
-                return await concreteStorage.GetRememberedEmailAsync();
-            }
-            return null;
+            return await _tokenStorage.GetSavedEmailAsync();
         }
 
-        // Modify the LoginWithProviderAsync method to include more debugging and handle Android-specific issues
+        // Perform a diagnostic test on network connectivity
+        public async Task<bool> PerformDiagnosticTest()
+        {
+            return await _networkDiagnostics.PerformConnectivityTestAsync();
+        }
+
         private async Task<ClaimsPrincipal> LoginWithProviderAsync(LoginRequest loginModel)
         {
             var authenticatedUser = _defaultUser;
@@ -171,97 +163,77 @@ namespace MauiBlazorWeb.Services
             try
             {
                 // Run a diagnostic test first
-                var diagnosticResult = await PerformDiagnosticTest();
+                var diagnosticResult = await _networkDiagnostics.PerformConnectivityTestAsync();
                 Debug.WriteLine($"Diagnostic test result: {(diagnosticResult ? "Success" : "Failed")}");
-            
-                var httpClient = HttpClientHelper.GetHttpClient();
-                Debug.WriteLine($"Base URL: {HttpClientHelper.BaseUrl}");
-                Debug.WriteLine($"Login URL: {HttpClientHelper.LoginUrl}");
-                Debug.WriteLine($"Using platform-specific HttpClient for: {DeviceInfo.Platform}");
-            
-                // Create form content
-                var formContent = new FormUrlEncodedContent(new[]
-                {
-                    new KeyValuePair<string, string>("email", loginModel.Email),
-                    new KeyValuePair<string, string>("password", loginModel.Password)
-                });
 
-                // Ensure Content-Type is set
-                formContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/x-www-form-urlencoded");
+                // Perform authentication via service
+                var loginResult = await _authService.AuthenticateAsync(loginModel);
             
-                // Clear and set headers
-                httpClient.DefaultRequestHeaders.Accept.Clear();
-                httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-            
-                // Add more detailed logging
-                Debug.WriteLine($"Making POST request to: {HttpClientHelper.LoginUrl}");
-                Debug.WriteLine($"With credentials: {loginModel.Email} / [PASSWORD HIDDEN]");
-            
-                // Make the request with a timeout
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                using var response = await httpClient.PostAsync(HttpClientHelper.LoginUrl, formContent, cts.Token);
-            
-                // Get response content regardless of status code
-                var responseContent = await response.Content.ReadAsStringAsync();
-            
-                Debug.WriteLine($"Response status code: {(int)response.StatusCode} {response.StatusCode}");
-                Debug.WriteLine($"Response headers: {string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"))}");
-                Debug.WriteLine($"Response content: {responseContent}");
-            
-                LoginStatus = response.IsSuccessStatusCode ? LoginStatus.Success : LoginStatus.Failed;
+                LoginStatus = loginResult.Success ? LoginStatus.Success : LoginStatus.Failed;
+                LoginFailureMessage = loginResult.Message ?? string.Empty;
             
                 if (LoginStatus == LoginStatus.Success)
                 {
                     Debug.WriteLine("Login successful, saving token");
-                    _accessToken = await _tokenStorage.SaveTokenAsync(responseContent, loginModel.Email);
+                    _accessToken = await _tokenStorage.SaveTokenAsync(loginResult.TokenData!, loginModel.Email);
                     authenticatedUser = CreateAuthenticatedUser(loginModel.Email);
                     Debug.WriteLine("Authentication state created successfully");
                 }
                 else
                 {
-                    LoginFailureMessage = $"Login failed: {(int)response.StatusCode} {response.StatusCode}";
-                    if (!string.IsNullOrEmpty(responseContent))
-                    {
-                        LoginFailureMessage += $" - {responseContent}";
-                    }
                     Debug.WriteLine($"Authentication failed: {LoginFailureMessage}");
                 }
             }
             catch (TaskCanceledException ex)
             {
-                Debug.WriteLine($"Request timed out: {ex.Message}");
-                LoginFailureMessage = "Login request timed out. Please check your network connection and server availability.";
-                LoginStatus = LoginStatus.Failed;
+                HandleTimeoutException(ex);
             }
             catch (HttpRequestException ex)
             {
-                Debug.WriteLine($"HTTP request error: {ex.Message}");
-                LoginFailureMessage = $"Network error: {ex.Message}";
-            
-                if (ex.InnerException != null)
-                {
-                    Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
-                    Debug.WriteLine($"Inner exception type: {ex.InnerException.GetType().Name}");
-                
-                    // Add more detailed error information for SSL/certificate issues
-                    if (ex.InnerException.Message.Contains("certificate") ||
-                        ex.InnerException.Message.Contains("SSL") ||
-                        ex.InnerException.Message.Contains("trust"))
-                    {
-                        LoginFailureMessage = "SSL/Certificate error. This is common in development environments. Please check your development certificate setup.";
-                    }
-                }
-            
-                LoginStatus = LoginStatus.Failed;
+                HandleHttpRequestException(ex);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Login general error: {ex.GetType().Name}: {ex.Message}");
-                LoginFailureMessage = $"Error: {ex.Message}";
-                LoginStatus = LoginStatus.Failed;
+                HandleGeneralLoginException(ex);
             }
 
             return authenticatedUser;
+        }
+
+        private void HandleTimeoutException(TaskCanceledException ex)
+        {
+            Debug.WriteLine($"Request timed out: {ex.Message}");
+            LoginFailureMessage = "Login request timed out. Please check your network connection and server availability.";
+            LoginStatus = LoginStatus.Failed;
+        }
+
+        private void HandleHttpRequestException(HttpRequestException ex)
+        {
+            Debug.WriteLine($"HTTP request error: {ex.Message}");
+            LoginFailureMessage = $"Network error: {ex.Message}";
+        
+            if (ex.InnerException != null)
+            {
+                Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                Debug.WriteLine($"Inner exception type: {ex.InnerException.GetType().Name}");
+            
+                // Add more detailed error information for SSL/certificate issues
+                if (ex.InnerException.Message.Contains("certificate") ||
+                    ex.InnerException.Message.Contains("SSL") ||
+                    ex.InnerException.Message.Contains("trust"))
+                {
+                    LoginFailureMessage = "SSL/Certificate error. This is common in development environments. Please check your development certificate setup.";
+                }
+            }
+        
+            LoginStatus = LoginStatus.Failed;
+        }
+
+        private void HandleGeneralLoginException(Exception ex)
+        {
+            Debug.WriteLine($"Login general error: {ex.GetType().Name}: {ex.Message}");
+            LoginFailureMessage = $"Error: {ex.Message}";
+            LoginStatus = LoginStatus.Failed;
         }
 
         private async Task<AuthenticationState> CreateAuthenticationStateFromSecureStorageAsync()
@@ -317,14 +289,13 @@ namespace MauiBlazorWeb.Services
             {
                 if (refreshToken != null)
                 {
-                    //Call the Refresh endpoint and pass the refresh token
-                    var httpClient = HttpClientHelper.GetHttpClient();
-                    var refreshData = new { refreshToken };
-                    using var response = await httpClient.PostAsJsonAsync(HttpClientHelper.RefreshUrl, refreshData);
-                    response.EnsureSuccessStatusCode();
-                    var token = await response.Content.ReadAsStringAsync();
-                    _accessToken = await _tokenStorage.SaveTokenAsync(token, email);
-                    return true;
+                    var refreshResult = await _authService.RefreshTokenAsync(refreshToken);
+                    
+                    if (refreshResult.Success && refreshResult.TokenData != null)
+                    {
+                        _accessToken = await _tokenStorage.SaveTokenAsync(refreshResult.TokenData, email);
+                        return true;
+                    }
                 }
 
                 return false;

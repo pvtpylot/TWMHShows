@@ -1,4 +1,4 @@
-using MauiBlazorWeb.Services;
+    using MauiBlazorWeb.Services;
 using MauiBlazorWeb.Shared.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
@@ -28,12 +28,13 @@ namespace MauiBlazorWeb
             builder.Services.AddTransient<AndroidHttpMessageHandler>();
 #endif
 
-            //Register needed elements for authentication:
-            // This is the core functionality
+            // Register authentication services
             builder.Services.AddAuthorizationCore();
-            // This is our custom provider
+            builder.Services.AddScoped<INetworkDiagnostics, DefaultNetworkDiagnostics>();
+            builder.Services.AddScoped<IAuthenticationService, DefaultAuthenticationService>();
+            builder.Services.AddScoped<ISecureStorageProvider, MauiSecureStorageProvider>();
+            builder.Services.AddScoped<ITokenStorage, TokenStorage>();
             builder.Services.AddScoped<MauiAuthenticationStateProvider>();
-            // Use our custom provider when the app needs an AuthenticationStateProvider
             builder.Services.AddScoped<AuthenticationStateProvider>(sp => 
                 sp.GetRequiredService<MauiAuthenticationStateProvider>());
 
@@ -62,9 +63,6 @@ namespace MauiBlazorWeb
                 Timeout = TimeSpan.FromSeconds(30)
             });
 #endif
-
-            // Make sure to initialize the TokenStorage
-            builder.Services.AddSingleton<ITokenStorage, TokenStorage>();
 
             // Register data services
             builder.Services.AddScoped<IDataService, MauiDataService>();
