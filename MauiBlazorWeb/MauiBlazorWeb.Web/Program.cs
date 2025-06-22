@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using MauiBlazorWeb.Web.Services.Mappers;
+using MauiBlazorWeb.Shared.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,16 @@ builder.Services.AddScoped<IWeatherService, WeatherService>();
 
 // Add your user service registration here
 builder.Services.AddScoped<IUserService, WebUserService>();
+
+// Add this near the top with other service registrations
+builder.Services.AddScoped<IRoleService, WebRoleService>();
+
+// Required for role management
+builder.Services.AddIdentityCore<ApplicationUser>()
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddSignInManager()
+    .AddDefaultTokenProviders();
 
 // Add Auth services used by the Web app
 builder.Services.AddAuthentication(options =>
@@ -42,6 +53,11 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
+});
+
+builder.Services.AddAuthorization(options => 
+{
+    AuthorizationPolicies.RegisterPolicies(options);
 });
 
 builder.Services.AddCascadingAuthenticationState();
@@ -77,7 +93,7 @@ builder.Services.AddIdentityApiEndpoints<ApplicationUser>(options => options.Sig
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore-swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -215,6 +231,9 @@ app.MapPost("/identity/mobilelogin", async (HttpContext context, UserManager<App
             // Find the user
             var user = await userManager.FindByEmailAsync(email);
             
+            // Get user roles
+            var roles = await userManager.GetRolesAsync(user);
+            
             // Generate tokens
             var refreshToken = Guid.NewGuid().ToString();
             var accessToken = await userManager.GenerateUserTokenAsync(user, "Default", "APIAccessToken");
@@ -223,13 +242,15 @@ app.MapPost("/identity/mobilelogin", async (HttpContext context, UserManager<App
             var refreshClaim = new Claim("RefreshToken", refreshToken);
             await userManager.AddClaimAsync(user, refreshClaim);
             
-            // Create response
+            // Create response with roles
             var response = new
             {
                 tokenType = "Bearer",
                 accessToken = accessToken,
                 expiresIn = 3600, // 1 hour
-                refreshToken = refreshToken
+                refreshToken = refreshToken,
+                userId = user.Id,
+                roles = roles.ToArray()
             };
             
             return Results.Ok(response);
@@ -274,5 +295,105 @@ app.MapDelete("/api/userModelObjects/{id}", async (string id, IDataService dataS
     var result = await dataService.DeleteUserModelObjectAsync(id);
     return result ? Results.NoContent() : Results.NotFound();
 }).RequireAuthorization();
+
+// Initialize application roles during startup
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    
+    // Ensure all application roles exist
+    foreach (var role in ApplicationRoles.AllRoles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole(role));
+    }
+    
+    // Optional: Create an admin user if none exists
+    var adminEmail = "admin@example.com";
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+    
+    if (adminUser == null)
+    {
+        adminUser = new ApplicationUser
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            EmailConfirmed = true,
+            First = "Admin",
+            Last = "User"
+        };
+        
+        await userManager.CreateAsync(adminUser, "Admin123!");
+        await userManager.AddToRoleAsync(adminUser, ApplicationRoles.Admin);
+    }
+}
+
+// Add these API endpoints for role management
+app.MapGet("/api/users/{userId}/roles", async (string userId, IRoleService roleService) =>
+{
+    var roles = await roleService.GetUserRolesAsync(userId);
+    return Results.Ok(roles);
+}).RequireAuthorization();
+
+app.MapPost("/api/users/{userId}/roles", async (string userId, string role, IRoleService roleService) =>
+{
+    var result = await roleService.AddUserToRoleAsync(userId, role);
+    return result ? Results.Ok() : Results.BadRequest("Failed to add role");
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
+
+app.MapDelete("/api/users/{userId}/roles/{role}", async (string userId, string role, IRoleService roleService) =>
+{
+    var result = await roleService.RemoveUserFromRoleAsync(userId, role);
+    return result ? Results.Ok() : Results.BadRequest("Failed to remove role");
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
+
+app.MapGet("/api/roles", async (IRoleService roleService) =>
+{
+    var roles = await roleService.GetAllRolesAsync();
+    return Results.Ok(roles);
+}).RequireAuthorization();
+
+// Add these API endpoints for user management
+app.MapGet("/api/users", async (UserManager<ApplicationUser> userManager) =>
+{
+    var users = await userManager.Users
+        .Select(u => new UserDto
+        {
+            Id = u.Id,
+            UserName = u.UserName,
+            Email = u.Email,
+            FirstName = u.First,
+            LastName = u.Last,
+            EmailConfirmed = u.EmailConfirmed,
+            IsLockedOut = u.LockoutEnabled && u.LockoutEnd > DateTimeOffset.Now
+        })
+        .ToListAsync();
+    
+    return Results.Ok(users);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
+
+app.MapGet("/api/users/{userId}", async (string userId, UserManager<ApplicationUser> userManager) =>
+{
+    var user = await userManager.FindByIdAsync(userId);
+    if (user == null)
+        return Results.NotFound();
+    
+    var roles = await userManager.GetRolesAsync(user);
+    
+    var userDto = new UserDto
+    {
+        Id = user.Id,
+        UserName = user.UserName,
+        Email = user.Email,
+        FirstName = user.First,
+        LastName = user.Last,
+        EmailConfirmed = user.EmailConfirmed,
+        IsLockedOut = user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.Now,
+        Roles = roles.ToList()
+    };
+    
+    return Results.Ok(userDto);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
 
 app.Run();

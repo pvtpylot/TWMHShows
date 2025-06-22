@@ -1,4 +1,5 @@
-    using MauiBlazorWeb.Services;
+using MauiBlazorWeb.Services;
+using MauiBlazorWeb.Shared.Models;
 using MauiBlazorWeb.Shared.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
@@ -29,7 +30,32 @@ namespace MauiBlazorWeb
 #endif
 
             // Register authentication services
-            builder.Services.AddAuthorizationCore();
+            builder.Services.AddAuthorizationCore(options => 
+            {
+                // Basic policies
+                options.AddPolicy("RequireAuthenticatedUser", policy => 
+                    policy.RequireAuthenticatedUser());
+                
+                // Role-based policies
+                options.AddPolicy("RequireAdminRole", policy => 
+                    policy.RequireRole(ApplicationRoles.Admin));
+                
+                options.AddPolicy("RequireJudgeRole", policy => 
+                    policy.RequireRole(ApplicationRoles.Judge, ApplicationRoles.Admin));
+                
+                options.AddPolicy("RequireModeratorRole", policy => 
+                    policy.RequireRole(ApplicationRoles.Moderator, ApplicationRoles.Admin));
+                
+                options.AddPolicy("RequireUserRole", policy => 
+                    policy.RequireRole(ApplicationRoles.User, ApplicationRoles.TrialUser, ApplicationRoles.Admin));
+
+                // You can also add dynamic policies based on the roles
+                foreach (var role in ApplicationRoles.AllRoles)
+                {
+                    options.AddPolicy($"RequiresRole_{role}", policy => 
+                        policy.RequireRole(role));
+                }
+            });
             builder.Services.AddScoped<INetworkDiagnostics, DefaultNetworkDiagnostics>();
             builder.Services.AddScoped<IAuthenticationService, DefaultAuthenticationService>();
             builder.Services.AddScoped<ISecureStorageProvider, MauiSecureStorageProvider>();
@@ -44,6 +70,10 @@ namespace MauiBlazorWeb
 
             // Add the user service registration here
             builder.Services.AddScoped<IUserService, MauiUserService>();
+
+            // Add these service registrations
+            builder.Services.AddSingleton<IAuthService, MauiAuthService>();
+            builder.Services.AddSingleton<IRoleService, MauiRoleService>();
 
 #if ANDROID
             builder.Services.AddSingleton(sp => 

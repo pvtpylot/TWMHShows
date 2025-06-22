@@ -1,4 +1,4 @@
-    using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace MauiBlazorWeb.Models
 {
@@ -14,9 +14,15 @@ namespace MauiBlazorWeb.Models
         public required string AccessToken { get; set; }
 
         [JsonPropertyName("expiresIn")]
-        public required int ExpiresIn { get; set; } = 0;
+        public required int ExpiresIn { get; set; }
 
         [JsonPropertyName("refreshToken")]
         public required string RefreshToken { get; set; }
+
+        [JsonPropertyName("userId")]
+        public string UserId { get; set; } = string.Empty;
+
+        [JsonPropertyName("roles")]
+        public string[]? Roles { get; set; }
     }
 }

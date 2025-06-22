@@ -1,0 +1,34 @@
+@page "/user-management"
+@using MauiBlazorWeb.Shared.Components
+@using MauiBlazorWeb.Shared.Models.DTOs
+@using MauiBlazorWeb.Shared.Services
+@using Microsoft.AspNetCore.Authorization
+@inject IRoleService RoleService
+@attribute [Authorize(Roles = "Admin")]
+
+<h1>User Role Management</h1>
+
+<UserRoleManagement 
+    Users="@Users" 
+    SelectedUser="@SelectedUser"
+    OnUserSelected="HandleUserSelected" />
+
+@code {
+    private List<UserDto> Users { get; set; } = new();
+    private UserDto? SelectedUser { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+    
+    private async Task LoadUsersAsync()
+    {
+        Users = await RoleService.GetAllUsersAsync();
+    }
+    
+    private void HandleUserSelected(UserDto user)
+    {
+        SelectedUser = user;
+    }
+}
