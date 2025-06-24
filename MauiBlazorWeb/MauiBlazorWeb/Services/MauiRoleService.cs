@@ -71,11 +71,12 @@ namespace MauiBlazorWeb.Services
         private async Task EnsureAuthTokenAsync()
         {
             var token = await _tokenStorage.GetTokenAsync();
-            if (!string.IsNullOrEmpty(token))
+            if (token == null)
             {
-                _httpClient.DefaultRequestHeaders.Authorization = 
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                return;
             }
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.ToString());
         }
     }
 }
