@@ -1,0 +1,298 @@
+@using MauiBlazorWeb.Shared.Models
+@using MauiBlazorWeb.Shared.Services
+@inject IRoleService RoleService
+
+<div class="role-management-container">
+    <h3>Role Management</h3>
+    
+    @if (IsLoading)
+    {
+        <div class="loading">Loading role data...</div>
+    }
+    else
+    {
+        <div class="roles-section">
+            <h4>Available Roles</h4>
+            
+            <div class="role-list">
+                @if (Roles?.Any() == true)
+                {
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Role Name</th>
+                                <th>Users Count</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var role in Roles)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (EditingRole == role)
+                                        {
+                                            <input @bind="NewRoleName" class="form-control" />
+                                        }
+                                        else
+                                        {
+                                            @role
+                                        }
+                                    </td>
+                                    <td>@(RoleUsersCount.TryGetValue(role, out var count) ? count : 0)</td>
+                                    <td>
+                                        @if (EditingRole == role)
+                                        {
+                                            <button class="btn btn-sm btn-success" @onclick="SaveRoleEdit">Save</button>
+                                            <button class="btn btn-sm btn-secondary" @onclick="CancelEdit">Cancel</button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-primary" @onclick="() => StartEditRole(role)">Edit</button>
+                                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteRoleAsync(role)" 
+                                                    disabled="@(RoleUsersCount.TryGetValue(role, out var c) && c > 0)">Delete</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="no-roles">No roles defined</div>
+                }
+            </div>
+            
+            <div class="add-role-section">
+                <h5>Create New Role</h5>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" placeholder="Role name" @bind="NewRoleName" />
+                    <button class="btn btn-primary" @onclick="CreateRoleAsync" disabled="@string.IsNullOrEmpty(NewRoleName)">
+                        Create Role
+                    </button>
+                </div>
+            </div>
+            
+            @if (!string.IsNullOrEmpty(StatusMessage))
+            {
+                <div class="@(StatusIsError ? "status-error" : "status-success")">
+                    @StatusMessage
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .role-management-container {
+        padding: 1rem;
+    }
+    
+    .loading {
+        padding: 1rem;
+        color: #666;
+    }
+    
+    .roles-section {
+        margin-bottom: 2rem;
+    }
+    
+    .role-list {
+        margin-bottom: 1.5rem;
+    }
+    
+    .add-role-section {
+        margin-top: 2rem;
+    }
+    
+    .no-roles {
+        padding: 1rem;
+        color: #666;
+        font-style: italic;
+    }
+    
+    .status-error, .status-success {
+        padding: 0.75rem;
+        border-radius: 4px;
+        margin-top: 1rem;
+    }
+    
+    .status-error {
+        background-color: #f8d7da;
+        color: #842029;
+        border: 1px solid #f5c2c7;
+    }
+    
+    .status-success {
+        background-color: #d1e7dd;
+        color: #0f5132;
+        border: 1px solid #badbcc;
+    }
+</style>
+
+@code {
+    private List<string> Roles { get; set; } = new();
+    private Dictionary<string, int> RoleUsersCount { get; set; } = new();
+    private string NewRoleName { get; set; } = string.Empty;
+    private string? EditingRole { get; set; }
+    private bool IsLoading = false;
+    private string StatusMessage = string.Empty;
+    private bool StatusIsError = false;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRolesAsync();
+    }
+    
+    private async Task LoadRolesAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            Roles = (await RoleService.GetAllRolesAsync()).ToList();
+            
+            // Load user counts for each role
+            RoleUsersCount.Clear();
+            foreach (var role in Roles)
+            {
+                var count = await RoleService.GetUsersInRoleCountAsync(role);
+                RoleUsersCount[role] = count;
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error loading roles: {ex.Message}";
+            StatusIsError = true;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+    
+    private async Task CreateRoleAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewRoleName))
+            return;
+            
+        IsLoading = true;
+        try
+        {
+            var result = await RoleService.CreateRoleAsync(NewRoleName);
+            if (result)
+            {
+                StatusMessage = $"Role '{NewRoleName}' created successfully";
+                StatusIsError = false;
+                NewRoleName = string.Empty;
+                await LoadRolesAsync();
+            }
+            else
+            {
+                StatusMessage = $"Failed to create role '{NewRoleName}'";
+                StatusIsError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+            StatusIsError = true;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+    
+    private void StartEditRole(string role)
+    {
+        EditingRole = role;
+        NewRoleName = role;
+    }
+    
+    private void CancelEdit()
+    {
+        EditingRole = null;
+        NewRoleName = string.Empty;
+    }
+    
+    private async Task SaveRoleEdit()
+    {
+        if (string.IsNullOrWhiteSpace(NewRoleName) || EditingRole == null)
+            return;
+            
+        if (EditingRole == NewRoleName)
+        {
+            CancelEdit();
+            return;
+        }
+            
+        IsLoading = true;
+        try
+        {
+            var result = await RoleService.UpdateRoleAsync(EditingRole, NewRoleName);
+            if (result)
+            {
+                StatusMessage = $"Role renamed to '{NewRoleName}' successfully";
+                StatusIsError = false;
+                await LoadRolesAsync();
+            }
+            else
+            {
+                StatusMessage = $"Failed to rename role '{EditingRole}'";
+                StatusIsError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+            StatusIsError = true;
+        }
+        finally
+        {
+            EditingRole = null;
+            NewRoleName = string.Empty;
+            IsLoading = false;
+        }
+    }
+    
+    private async Task DeleteRoleAsync(string role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+            return;
+            
+        // Check if there are users in the role
+        if (RoleUsersCount.TryGetValue(role, out var count) && count > 0)
+        {
+            StatusMessage = $"Cannot delete role '{role}' because it has users assigned to it";
+            StatusIsError = true;
+            return;
+        }
+            
+        IsLoading = true;
+        try
+        {
+            var result = await RoleService.DeleteRoleAsync(role);
+            if (result)
+            {
+                StatusMessage = $"Role '{role}' deleted successfully";
+                StatusIsError = false;
+                await LoadRolesAsync();
+            }
+            else
+            {
+                StatusMessage = $"Failed to delete role '{role}'";
+                StatusIsError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+            StatusIsError = true;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

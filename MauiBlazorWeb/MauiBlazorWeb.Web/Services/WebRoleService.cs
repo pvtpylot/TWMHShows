@@ -93,5 +93,64 @@ namespace MauiBlazorWeb.Web.Services
                 Roles = roles.ToList()
             };
         }
+
+        public async Task<bool> CreateRoleAsync(string roleName)
+        {
+            if (string.IsNullOrEmpty(roleName))
+                return false;
+                
+            // Check if the role already exists
+            if (await _roleManager.RoleExistsAsync(roleName))
+                return false;
+                
+            // Create the new role
+            var result = await _roleManager.CreateAsync(new IdentityRole(roleName));
+            return result.Succeeded;
+        }
+
+        public async Task<bool> UpdateRoleAsync(string oldRoleName, string newRoleName)
+        {
+            if (string.IsNullOrEmpty(oldRoleName) || string.IsNullOrEmpty(newRoleName))
+                return false;
+                
+            // Find the role by name
+            var role = await _roleManager.FindByNameAsync(oldRoleName);
+            if (role == null)
+                return false;
+                
+            // Update the role name
+            role.Name = newRoleName;
+            var result = await _roleManager.UpdateAsync(role);
+            return result.Succeeded;
+        }
+
+        public async Task<bool> DeleteRoleAsync(string roleName)
+        {
+            if (string.IsNullOrEmpty(roleName))
+                return false;
+                
+            // Find the role by name
+            var role = await _roleManager.FindByNameAsync(roleName);
+            if (role == null)
+                return false;
+                
+            // Delete the role
+            var result = await _roleManager.DeleteAsync(role);
+            return result.Succeeded;
+        }
+
+        public async Task<int> GetUsersInRoleCountAsync(string roleName)
+        {
+            if (string.IsNullOrEmpty(roleName))
+                return 0;
+                
+            // Check if the role exists
+            if (!await _roleManager.RoleExistsAsync(roleName))
+                return 0;
+                
+            // Get users in the role
+            var usersInRole = await _userManager.GetUsersInRoleAsync(roleName);
+            return usersInRole.Count;
+        }
     }
 }

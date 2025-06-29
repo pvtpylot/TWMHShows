@@ -67,6 +67,50 @@ namespace MauiBlazorWeb.Services
             
             return await _httpClient.GetFromJsonAsync<UserDto>($"api/users/{userId}");
         }
+
+        public async Task<bool> CreateRoleAsync(string roleName)
+        {
+            await EnsureAuthTokenAsync();
+            
+            var response = await _httpClient.PostAsync(
+                $"api/roles?name={Uri.EscapeDataString(roleName)}", null);
+                
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> UpdateRoleAsync(string oldRoleName, string newRoleName)
+        {
+            await EnsureAuthTokenAsync();
+            
+            var response = await _httpClient.PutAsync(
+                $"api/roles/{Uri.EscapeDataString(oldRoleName)}?newName={Uri.EscapeDataString(newRoleName)}", null);
+                
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> DeleteRoleAsync(string roleName)
+        {
+            await EnsureAuthTokenAsync();
+            
+            var request = new HttpRequestMessage(HttpMethod.Delete, $"api/roles/{Uri.EscapeDataString(roleName)}");
+            var response = await _httpClient.SendAsync(request);
+                
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<int> GetUsersInRoleCountAsync(string roleName)
+        {
+            await EnsureAuthTokenAsync();
+            
+            try
+            {
+                return await _httpClient.GetFromJsonAsync<int>($"api/roles/{Uri.EscapeDataString(roleName)}/count");
+            }
+            catch
+            {
+                return 0;
+            }
+        }
         
         private async Task EnsureAuthTokenAsync()
         {

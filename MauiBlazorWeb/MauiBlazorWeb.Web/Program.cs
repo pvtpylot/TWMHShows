@@ -354,6 +354,59 @@ app.MapGet("/api/roles", async (IRoleService roleService) =>
     return Results.Ok(roles);
 }).RequireAuthorization();
 
+app.MapPost("/api/roles", async (string name, RoleManager<IdentityRole> roleManager) =>
+{
+    if (string.IsNullOrEmpty(name))
+        return Results.BadRequest("Role name is required");
+        
+    if (await roleManager.RoleExistsAsync(name))
+        return Results.Conflict("Role already exists");
+        
+    var result = await roleManager.CreateAsync(new IdentityRole(name));
+    return result.Succeeded ? Results.Created($"/api/roles/{name}", name) : Results.BadRequest(result.Errors);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
+
+app.MapPut("/api/roles/{oldName}", async (string oldName, string newName, RoleManager<IdentityRole> roleManager) =>
+{
+    if (string.IsNullOrEmpty(newName))
+        return Results.BadRequest("New role name is required");
+        
+    var role = await roleManager.FindByNameAsync(oldName);
+    if (role == null)
+        return Results.NotFound();
+        
+    if (await roleManager.RoleExistsAsync(newName) && !string.Equals(oldName, newName, StringComparison.OrdinalIgnoreCase))
+        return Results.Conflict("Role with new name already exists");
+        
+    role.Name = newName;
+    var result = await roleManager.UpdateAsync(role);
+    return result.Succeeded ? Results.Ok() : Results.BadRequest(result.Errors);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
+
+app.MapDelete("/api/roles/{name}", async (string name, RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager) =>
+{
+    var role = await roleManager.FindByNameAsync(name);
+    if (role == null)
+        return Results.NotFound();
+        
+    // Check if there are users in this role
+    var usersInRole = await userManager.GetUsersInRoleAsync(name);
+    if (usersInRole.Any())
+        return Results.BadRequest("Cannot delete role with users assigned to it");
+        
+    var result = await roleManager.DeleteAsync(role);
+    return result.Succeeded ? Results.NoContent() : Results.BadRequest(result.Errors);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
+
+app.MapGet("/api/roles/{name}/count", async (string name, RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager) =>
+{
+    if (!await roleManager.RoleExistsAsync(name))
+        return Results.NotFound();
+        
+    var usersInRole = await userManager.GetUsersInRoleAsync(name);
+    return Results.Ok(usersInRole.Count);
+}).RequireAuthorization();
+
 // Add these API endpoints for user management
 app.MapGet("/api/users", async (UserManager<ApplicationUser> userManager) =>
 {

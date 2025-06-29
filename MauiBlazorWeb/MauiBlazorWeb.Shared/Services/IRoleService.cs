@@ -12,5 +12,11 @@ namespace MauiBlazorWeb.Shared.Services
         Task<bool> RemoveUserFromRoleAsync(string userId, string role);
         Task<List<UserDto>> GetAllUsersAsync();
         Task<UserDto?> GetUserByIdAsync(string userId);
+        
+        // New methods for managing roles
+        Task<bool> CreateRoleAsync(string roleName);
+        Task<bool> UpdateRoleAsync(string oldRoleName, string newRoleName);
+        Task<bool> DeleteRoleAsync(string roleName);
+        Task<int> GetUsersInRoleCountAsync(string roleName);
     }
 }
