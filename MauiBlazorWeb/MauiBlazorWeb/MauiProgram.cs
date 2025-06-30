@@ -73,7 +73,7 @@ namespace MauiBlazorWeb
 
             // Add these service registrations
             builder.Services.AddSingleton<IAuthService, MauiAuthService>();
-            builder.Services.AddSingleton<IRoleService, MauiRoleService>();
+            builder.Services.AddScoped<IRoleService, MauiRoleService>();
 
 #if ANDROID
             builder.Services.AddSingleton(sp => 

@@ -50,7 +50,7 @@
             loginFailureHidden = false;
         }
 
-        // Check if user is already logged in
+        // Check if a user is already logged in
         if (await AuthStateProvider.HasValidSessionAsync())
         {
             Navigation.NavigateTo(""); // Redirect to home if already logged in
