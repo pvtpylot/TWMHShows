@@ -11,18 +11,23 @@ namespace MauiBlazorWeb.Services
     /// </summary>
     public class DefaultNetworkDiagnostics : INetworkDiagnostics
     {
+        protected virtual HttpClient GetHttpClient()
+        {
+            return HttpClientHelper.GetHttpClient();
+        }
+        
         public async Task<bool> PerformConnectivityTestAsync()
         {
             try
             {
                 Debug.WriteLine("Performing diagnostic connection test...");
-                var httpClient = HttpClientHelper.GetHttpClient();
+                var httpClient = GetHttpClient();
                 Debug.WriteLine($"Testing connection to: {HttpClientHelper.BaseUrl}");
-                
+        
                 // Try a simple GET request to the base URL
                 var response = await httpClient.GetAsync(HttpClientHelper.BaseUrl);
                 Debug.WriteLine($"Diagnostic test response: {(int)response.StatusCode} {response.StatusCode}");
-                
+        
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
