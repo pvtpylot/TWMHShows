@@ -17,14 +17,22 @@ namespace MauiBlazorWeb.Web.Data
         
         [Required]
         public int ClassNumber { get; set; }
+
+        public int? MaxEntries { get; set; } = 3;
         
-        public int? MaxEntries { get; set; }
+        // Foreign key for Division (many-to-one)
+        public long DivisionId { get; set; }
+    
+        // Navigation property to Division
+        [ForeignKey("DivisionId")]
+        public Division? Division { get; set; }
         
         // Foreign key to the Show
         public int ShowId { get; set; }
         
         // Navigation property to the Show
-        public virtual Show Show { get; set; } = null!;
+        [ForeignKey("ShowId")]
+        public Show Show { get; set; } = null!;
         
         // Navigation properties
         public virtual ICollection<Entry> Entries { get; set; } = new List<Entry>();

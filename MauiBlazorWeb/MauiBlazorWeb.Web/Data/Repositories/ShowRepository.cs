@@ -1,7 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace MauiBlazorWeb.Web.Data.Repositories
 {
@@ -30,7 +27,8 @@ namespace MauiBlazorWeb.Web.Data.Repositories
                 return null;
                 
             return await _dbContext.Shows
-                .Include(s => s.Classes)
+                .Include(s => s.Divisions)
+                .Include(s => s.Divisions.Select(d => d.ShowClasses))
                 .FirstOrDefaultAsync(s => s.Id == showId);
         }
     }

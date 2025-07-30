@@ -30,8 +30,20 @@ namespace MauiBlazorWeb.Web.Data
         // Navigation property to the judge
         public virtual ApplicationUser? Judge { get; set; }
         
-        // Navigation properties
-        public virtual ICollection<ShowClass> Classes { get; set; } = new List<ShowClass>();
+        
+        // One-to-many relationship with Division
+        public ICollection<Division> Divisions { get; set; } = new List<Division>();
+        public int ShowHolderId { get; set; }
+        [ForeignKey("ShowHolderId")]
+        public UserModelObject? ShowHolder { get; set; }
+        
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? EntryDeadline { get; set; }
+        public DateTime? JudgingDeadline { get; set; }
+        public DateTime? ResultsPublishedAt { get; set; }
+        public int MaxEntriesPerUser { get; set; } = 5;
     }
     
     public enum ShowStatus
