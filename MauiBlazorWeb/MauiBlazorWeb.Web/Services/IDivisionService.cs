@@ -2,7 +2,7 @@
 
 namespace MauiBlazorWeb.Web.Services;
 
-public class IDivisionService
+public interface IDivisionService
 {
     public Task<IEnumerable<Division>> GetAllAsync();
 }

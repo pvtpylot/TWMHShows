@@ -13,7 +13,7 @@ public class Division : BaseEntity
     
     
     // Many-to-one relationship with Show
-    public long ShowId { get; set; }
+    public int ShowId { get; set; }
     
     [ForeignKey("ShowId")]
     public Show? Show { get; set; }

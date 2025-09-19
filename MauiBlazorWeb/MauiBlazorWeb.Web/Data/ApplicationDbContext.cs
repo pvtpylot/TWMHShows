@@ -16,6 +16,11 @@ namespace MauiBlazorWeb.Web.Data
         public DbSet<Entry> Entries { get; set; }
         public DbSet<Result> Results { get; set; }
         public DbSet<Division> Divisions { get; set; }
+        public DbSet<Forum> Forums { get; set; }
+        public DbSet<ForumPost> ForumPosts { get; set; }
+        public DbSet<LiveShow> LiveShows { get; set; }
+        public DbSet<LiveComment> LiveComments { get; set; }
+        public DbSet<LiveAnnouncement> LiveAnnouncements { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -39,6 +44,32 @@ namespace MauiBlazorWeb.Web.Data
                 .WithMany(d => d.ShowClasses)
                 .HasForeignKey(sc => sc.DivisionId);
 
+            // Forum relationships
+            builder.Entity<Forum>()
+                .HasMany(f => f.Posts)
+                .WithOne(p => p.Forum)
+                .HasForeignKey(p => p.ForumId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ForumPost>()
+                .HasMany(p => p.Replies)
+                .WithOne(r => r.ParentPost)
+                .HasForeignKey(r => r.ParentPostId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Live show relationships
+            builder.Entity<LiveShow>()
+                .HasMany(ls => ls.Comments)
+                .WithOne(c => c.LiveShow)
+                .HasForeignKey(c => c.LiveShowId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<LiveShow>()
+                .HasMany(ls => ls.Announcements)
+                .WithOne(a => a.LiveShow)
+                .HasForeignKey(a => a.LiveShowId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // Configure soft delete filters
             builder.Entity<UserModelObject>().HasQueryFilter(e => !e.IsDeleted);
             builder.Entity<Show>().HasQueryFilter(e => !e.IsDeleted);
@@ -46,6 +77,11 @@ namespace MauiBlazorWeb.Web.Data
             builder.Entity<ShowClass>().HasQueryFilter(e => !e.IsDeleted);
             builder.Entity<Entry>().HasQueryFilter(e => !e.IsDeleted);
             builder.Entity<Result>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<Forum>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<ForumPost>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<LiveShow>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<LiveComment>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<LiveAnnouncement>().HasQueryFilter(e => !e.IsDeleted);
         }
     }
 }
