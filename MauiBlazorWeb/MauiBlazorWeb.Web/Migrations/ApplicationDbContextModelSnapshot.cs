@@ -4,7 +4,6 @@ using MauiBlazorWeb.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,15 +11,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MauiBlazorWeb.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250616135019_ChangesAdded")]
-    partial class ChangesAdded
+    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "9.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -96,6 +93,37 @@ namespace MauiBlazorWeb.Web.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.Division", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ShowId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShowId");
+
+                    b.ToTable("Divisions");
+                });
+
             modelBuilder.Entity("MauiBlazorWeb.Web.Data.Entry", b =>
                 {
                     b.Property<int>("Id")
@@ -135,6 +163,242 @@ namespace MauiBlazorWeb.Web.Migrations
                     b.HasIndex("UserModelObjectId");
 
                     b.ToTable("Entries");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.Forum", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("RequiresAuthentication")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ShowId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShowId");
+
+                    b.ToTable("Forums");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.ForumPost", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AnonymousName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AuthorId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ForumId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsModerated")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ParentPostId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PostedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("ForumId");
+
+                    b.HasIndex("ParentPostId");
+
+                    b.ToTable("ForumPosts");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.LiveAnnouncement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AuthorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LiveShowId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PostedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("LiveShowId");
+
+                    b.ToTable("LiveAnnouncements");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.LiveComment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AuthorId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LiveShowId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PostedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ShowClassId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("LiveShowId");
+
+                    b.HasIndex("ShowClassId");
+
+                    b.ToTable("LiveComments");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.LiveShow", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CurrentClassId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsLive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ShowId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrentClassId");
+
+                    b.HasIndex("ShowId");
+
+                    b.ToTable("LiveShows");
                 });
 
             modelBuilder.Entity("MauiBlazorWeb.Web.Data.Result", b =>
@@ -193,28 +457,48 @@ namespace MauiBlazorWeb.Web.Migrations
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("EntryDeadline")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<string>("JudgeId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("JudgingDeadline")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MaxEntriesPerUser")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ResultsPublishedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("ShowDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("ShowHolderId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
                     b.HasIndex("JudgeId");
+
+                    b.HasIndex("ShowHolderId");
 
                     b.ToTable("Shows");
                 });
@@ -237,6 +521,9 @@ namespace MauiBlazorWeb.Web.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<long>("DivisionId")
+                        .HasColumnType("bigint");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -254,6 +541,8 @@ namespace MauiBlazorWeb.Web.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DivisionId");
 
                     b.HasIndex("ShowId");
 
@@ -476,23 +765,128 @@ namespace MauiBlazorWeb.Web.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.Division", b =>
+                {
+                    b.HasOne("MauiBlazorWeb.Web.Data.Show", "Show")
+                        .WithMany("Divisions")
+                        .HasForeignKey("ShowId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Show");
+                });
+
             modelBuilder.Entity("MauiBlazorWeb.Web.Data.Entry", b =>
                 {
                     b.HasOne("MauiBlazorWeb.Web.Data.ShowClass", "ShowClass")
                         .WithMany("Entries")
                         .HasForeignKey("ShowClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("MauiBlazorWeb.Web.Data.UserModelObject", "UserModelObject")
                         .WithMany("Entries")
                         .HasForeignKey("UserModelObjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ShowClass");
 
                     b.Navigation("UserModelObject");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.Forum", b =>
+                {
+                    b.HasOne("MauiBlazorWeb.Web.Data.Show", "Show")
+                        .WithMany()
+                        .HasForeignKey("ShowId");
+
+                    b.Navigation("Show");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.ForumPost", b =>
+                {
+                    b.HasOne("MauiBlazorWeb.Web.Data.ApplicationUser", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId");
+
+                    b.HasOne("MauiBlazorWeb.Web.Data.Forum", "Forum")
+                        .WithMany("Posts")
+                        .HasForeignKey("ForumId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("MauiBlazorWeb.Web.Data.ForumPost", "ParentPost")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentPostId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Forum");
+
+                    b.Navigation("ParentPost");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.LiveAnnouncement", b =>
+                {
+                    b.HasOne("MauiBlazorWeb.Web.Data.ApplicationUser", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MauiBlazorWeb.Web.Data.LiveShow", "LiveShow")
+                        .WithMany("Announcements")
+                        .HasForeignKey("LiveShowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("LiveShow");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.LiveComment", b =>
+                {
+                    b.HasOne("MauiBlazorWeb.Web.Data.ApplicationUser", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId");
+
+                    b.HasOne("MauiBlazorWeb.Web.Data.LiveShow", "LiveShow")
+                        .WithMany("Comments")
+                        .HasForeignKey("LiveShowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MauiBlazorWeb.Web.Data.ShowClass", "ShowClass")
+                        .WithMany()
+                        .HasForeignKey("ShowClassId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Author");
+
+                    b.Navigation("LiveShow");
+
+                    b.Navigation("ShowClass");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.LiveShow", b =>
+                {
+                    b.HasOne("MauiBlazorWeb.Web.Data.ShowClass", "CurrentClass")
+                        .WithMany()
+                        .HasForeignKey("CurrentClassId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("MauiBlazorWeb.Web.Data.Show", "Show")
+                        .WithMany()
+                        .HasForeignKey("ShowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CurrentClass");
+
+                    b.Navigation("Show");
                 });
 
             modelBuilder.Entity("MauiBlazorWeb.Web.Data.Result", b =>
@@ -510,19 +904,34 @@ namespace MauiBlazorWeb.Web.Migrations
                 {
                     b.HasOne("MauiBlazorWeb.Web.Data.ApplicationUser", "Judge")
                         .WithMany("ShowsJudging")
-                        .HasForeignKey("JudgeId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("JudgeId");
+
+                    b.HasOne("MauiBlazorWeb.Web.Data.UserModelObject", "ShowHolder")
+                        .WithMany()
+                        .HasForeignKey("ShowHolderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Judge");
+
+                    b.Navigation("ShowHolder");
                 });
 
             modelBuilder.Entity("MauiBlazorWeb.Web.Data.ShowClass", b =>
                 {
-                    b.HasOne("MauiBlazorWeb.Web.Data.Show", "Show")
-                        .WithMany("Classes")
-                        .HasForeignKey("ShowId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("MauiBlazorWeb.Web.Data.Division", "Division")
+                        .WithMany("ShowClasses")
+                        .HasForeignKey("DivisionId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("MauiBlazorWeb.Web.Data.Show", "Show")
+                        .WithMany()
+                        .HasForeignKey("ShowId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Division");
 
                     b.Navigation("Show");
                 });
@@ -605,14 +1014,36 @@ namespace MauiBlazorWeb.Web.Migrations
                     b.Navigation("ShowsJudging");
                 });
 
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.Division", b =>
+                {
+                    b.Navigation("ShowClasses");
+                });
+
             modelBuilder.Entity("MauiBlazorWeb.Web.Data.Entry", b =>
                 {
                     b.Navigation("Result");
                 });
 
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.Forum", b =>
+                {
+                    b.Navigation("Posts");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.ForumPost", b =>
+                {
+                    b.Navigation("Replies");
+                });
+
+            modelBuilder.Entity("MauiBlazorWeb.Web.Data.LiveShow", b =>
+                {
+                    b.Navigation("Announcements");
+
+                    b.Navigation("Comments");
+                });
+
             modelBuilder.Entity("MauiBlazorWeb.Web.Data.Show", b =>
                 {
-                    b.Navigation("Classes");
+                    b.Navigation("Divisions");
                 });
 
             modelBuilder.Entity("MauiBlazorWeb.Web.Data.ShowClass", b =>

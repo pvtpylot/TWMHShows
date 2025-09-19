@@ -4,6 +4,7 @@ using MauiBlazorWeb.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MauiBlazorWeb.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250919154143_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -770,7 +773,7 @@ namespace MauiBlazorWeb.Web.Migrations
                     b.HasOne("MauiBlazorWeb.Web.Data.Show", "Show")
                         .WithMany("Divisions")
                         .HasForeignKey("ShowId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Show");
@@ -781,7 +784,7 @@ namespace MauiBlazorWeb.Web.Migrations
                     b.HasOne("MauiBlazorWeb.Web.Data.ShowClass", "ShowClass")
                         .WithMany("Entries")
                         .HasForeignKey("ShowClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("MauiBlazorWeb.Web.Data.UserModelObject", "UserModelObject")
@@ -813,7 +816,7 @@ namespace MauiBlazorWeb.Web.Migrations
                     b.HasOne("MauiBlazorWeb.Web.Data.Forum", "Forum")
                         .WithMany("Posts")
                         .HasForeignKey("ForumId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("MauiBlazorWeb.Web.Data.ForumPost", "ParentPost")
@@ -861,7 +864,8 @@ namespace MauiBlazorWeb.Web.Migrations
 
                     b.HasOne("MauiBlazorWeb.Web.Data.ShowClass", "ShowClass")
                         .WithMany()
-                        .HasForeignKey("ShowClassId");
+                        .HasForeignKey("ShowClassId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Author");
 
@@ -874,7 +878,8 @@ namespace MauiBlazorWeb.Web.Migrations
                 {
                     b.HasOne("MauiBlazorWeb.Web.Data.ShowClass", "CurrentClass")
                         .WithMany()
-                        .HasForeignKey("CurrentClassId");
+                        .HasForeignKey("CurrentClassId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("MauiBlazorWeb.Web.Data.Show", "Show")
                         .WithMany()
@@ -920,13 +925,13 @@ namespace MauiBlazorWeb.Web.Migrations
                     b.HasOne("MauiBlazorWeb.Web.Data.Division", "Division")
                         .WithMany("ShowClasses")
                         .HasForeignKey("DivisionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("MauiBlazorWeb.Web.Data.Show", "Show")
                         .WithMany()
                         .HasForeignKey("ShowId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Division");
