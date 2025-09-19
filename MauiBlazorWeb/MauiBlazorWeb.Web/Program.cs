@@ -98,10 +98,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // This makes the server accessible on all network interfaces
-builder.WebHost.ConfigureKestrel(options => {
-    options.ListenAnyIP(5000); // HTTP port
-    options.ListenAnyIP(7157, configure => configure.UseHttps()); // HTTPS port
-});
+if (builder.Environment.IsDevelopment())
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(5000); // HTTP port
+        options.ListenAnyIP(7157, configure => configure.UseHttps()); // HTTPS port
+    });
+}
 
 var app = builder.Build();
 
