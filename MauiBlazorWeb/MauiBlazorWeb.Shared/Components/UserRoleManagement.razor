@@ -71,13 +71,13 @@
                     {
                         @foreach (var role in UserRoles)
                         {
-                            <span class="badge text-bg-secondary me-2">
-                                @role
+                            <span class="badge bg-secondary text-white role-chip me-2">
+                                <span class="role-text">@role</span>
                                 <button type="button"
-                                        class="btn btn-sm btn-link link-light ms-1 p-0 align-baseline"
+                                        class="btn-close btn-close-white"
+                                        aria-label="Remove"
                                         title="Remove"
                                         @onclick="() => RemoveRoleAsync(role)">
-                                    ×
                                 </button>
                             </span>
                         }
@@ -94,6 +94,19 @@
         }
     </div>
 </div>
+
+<style>
+    .role-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        font-weight: 500;
+    }
+    .role-chip .btn-close {
+        float: none;
+        margin-left: .1rem;
+    }
+</style>
 
 @code {
     [Parameter] public List<UserDto> Users { get; set; } = new();
@@ -147,7 +160,12 @@
         try
         {
             var roles = await RoleService.GetUserRolesAsync(userId);
-            UserRoles = roles.ToList();
+            UserRoles = roles
+                .Where(r => !string.IsNullOrWhiteSpace(r))
+                .Select(r => r.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
             // keep SelectedUser.Roles in sync if present
             SelectedUser!.Roles = UserRoles.ToList();
         }
