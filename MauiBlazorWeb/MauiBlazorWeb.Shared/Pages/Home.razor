@@ -1,3 +1,4 @@
+
 @page "/"
 @using MauiBlazorWeb.Shared.Services
 @using Microsoft.AspNetCore.Components.Authorization
@@ -5,113 +6,433 @@
 @inject IUserService UserService
 @inject AuthenticationStateProvider GetAuthenticationStateAsync
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Home - Tradewinds Model Horse Show</PageTitle>
 
 <AuthorizeView>
     <Authorized>
-        <h2>Hi @FirstName!  You are logged into Tradewinds Model Horse Show as @context.User.Identity.Name!</h2>
-        <div class="container">
-            <div class="row text-center">
-                <div class="col-4"></div>
-                <div class="col-4 text-center">
-                    <img src="/img/tradewinds_logo.png" style="height:150px; align-content:center" alt="Tradewinds logo">
-                </div>
-                <div class="col-4"></div>
+        <div class="welcome-section">
+            <div class="welcome-header">
+                <h1 class="display-4 mb-2">Welcome back, @FirstName!</h1>
+                <p class="lead text-muted">You're logged into Tradewinds Model Horse Show as <strong>@context.User.Identity.Name</strong></p>
             </div>
-            <div class="row mt-4">
-                <div class="col-md-6 offset-md-3 text-center">
-                    <a href="my-collection" class="btn btn-primary btn-lg">
-                        <i class="oi oi-list"></i> View My Collection
-                    </a>
+            
+            <div class="container-fluid py-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="text-center mb-5">
+                            <div class="logo-container">
+                                <img src="/img/tradewinds_logo.png" class="main-logo" alt="Tradewinds logo">
+                            </div>
+                        </div>
+                        
+                        <div class="quick-actions">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <a href="my-collection" class="action-card">
+                                        <div class="action-icon">
+                                            <i class="oi oi-list"></i>
+                                        </div>
+                                        <div class="action-content">
+                                            <h5>My Collection</h5>
+                                            <p>View and manage your model horses</p>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="user-management" class="action-card">
+                                        <div class="action-icon">
+                                            <i class="oi oi-people"></i>
+                                        </div>
+                                        <div class="action-content">
+                                            <h5>User Management</h5>
+                                            <p>Manage users and permissions</p>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </Authorized>
+    
     <NotAuthorized>
-        <h1 align="center">Welcome to the Tradewinds Model Horse Show Community!</h1>
-        <div style="font-size:18px; color:blue; margin-top: 14px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
-        <div class="container">
-            <div class="row text-center">
-                <div class="col-4"></div>
-                <div class="col-4 text-center">
-                    <img src="/img/tradewinds_logo.png" style="height:150px; align-content:center" alt="Tradewinds logo">
-                </div>
-                <div class="col-4"></div>
-            </div>
-        </div>
-        
-        <div class="container mt-4">
-            <div class="row text-center">
-                <div class="col-md-4">
-                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
-                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
-                        <div class="card-body" style="height:250px">
-                            <h5 class="card-title">Create Your Stable</h5>
-                            <p class="card-text">Upload your own photos and then organize your stable however works best for you</p>
-                            <a href="pricing" class="btn btn-primary" style="position:absolute;top:85%;left:36%">Free Trial!</a>
+        <div class="hero-section">
+            <div class="container">
+                <div class="row align-items-center min-vh-50">
+                    <div class="col-lg-6">
+                        <h1 class="hero-title">Welcome to Tradewinds</h1>
+                        <h2 class="hero-subtitle">Model Horse Show Community</h2>
+                        <p class="hero-description">
+                            Join our thriving community of model horse enthusiasts. Create your stable, 
+                            participate in weekly shows, and connect with fellow collectors from around the world.
+                        </p>
+                        <div class="hero-actions">
+                            <a href="Account/Register" class="btn btn-primary btn-lg me-3">Get Started Free</a>
+                            <a href="Account/Login" class="btn btn-outline-primary btn-lg">Sign In</a>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
-                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
-                        <div class="card-body" style="height:250px">
-                            <h5 class="card-title">Weekly Shows!</h5>
-                            <p class="card-text">Weekly shows featuring judges known and respected throughout the model horse hobby!</p>
-                            <a href="showtypes" class="btn btn-primary" style="position:absolute;top:85%;left:36%">Learn More!</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
-                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
-                        <div class="card-body" style="height:250px">
-                            <h5 class="card-title">New to the Hobby?</h5>
-                            <p class="card-text">No problem, Tradewinds features beginning and tutorial shows, live learning sessions, as well as articles and videos where hobby experts will teach you what you need to know to have fun with model showing!</p>
-                            <a href="showtypes#tutorial" class="btn btn-primary" style="position:absolute;top:85%;left:36%">See More!</a>
+                    <div class="col-lg-6 text-center">
+                        <div class="hero-logo">
+                            <img src="/img/tradewinds_logo.png" class="img-fluid" alt="Tradewinds logo">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="container mt-4">
-            <div class="row text-center">
-                <div class="col-md-4">
-                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
-                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
-                        <div class="card-body" style="height:250px">
-                            <h5 class="card-title">Show Feedback</h5>
-                            <p class="card-text">Not getting the results you hoped for?  Ask one of our judges to evaluate your stable and recommend photo and class decisions for you.</p>
-                            <a href="review" class="btn btn-primary" style="position:absolute;top:85%;left:36%">Free Trial!</a>
+
+        <div class="features-section">
+            <div class="container">
+                <div class="row text-center mb-5">
+                    <div class="col">
+                        <h2 class="section-title">Everything You Need to Showcase Your Collection</h2>
+                        <p class="section-subtitle">Professional tools for serious collectors</p>
+                    </div>
+                </div>
+                
+                <div class="row g-4">
+                    <div class="col-lg-4 col-md-6">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <img src="/img/tradewinds_logo.png" alt="Feature icon">
+                            </div>
+                            <div class="feature-content">
+                                <h5 class="feature-title">Create Your Stable</h5>
+                                <p class="feature-description">
+                                    Upload your own photos and organize your stable however works best for you. 
+                                    Professional photo management tools included.
+                                </p>
+                                <a href="pricing" class="feature-link">Start Free Trial</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <img src="/img/tradewinds_logo.png" alt="Feature icon">
+                            </div>
+                            <div class="feature-content">
+                                <h5 class="feature-title">Weekly Shows</h5>
+                                <p class="feature-description">
+                                    Participate in weekly shows featuring judges known and respected 
+                                    throughout the model horse hobby community.
+                                </p>
+                                <a href="showtypes" class="feature-link">Learn More</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <img src="/img/tradewinds_logo.png" alt="Feature icon">
+                            </div>
+                            <div class="feature-content">
+                                <h5 class="feature-title">New to the Hobby?</h5>
+                                <p class="feature-description">
+                                    Tutorial shows, live learning sessions, articles and videos from 
+                                    hobby experts to help you get started.
+                                </p>
+                                <a href="showtypes#tutorial" class="feature-link">Get Started</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <img src="/img/tradewinds_logo.png" alt="Feature icon">
+                            </div>
+                            <div class="feature-content">
+                                <h5 class="feature-title">Expert Feedback</h5>
+                                <p class="feature-description">
+                                    Get personalized evaluations from our judges with recommendations 
+                                    for photo and class decisions.
+                                </p>
+                                <a href="review" class="feature-link">Try Free</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <img src="/img/tradewinds_logo.png" alt="Feature icon">
+                            </div>
+                            <div class="feature-content">
+                                <h5 class="feature-title">Unlimited Storage</h5>
+                                <p class="feature-description">
+                                    Store unlimited photos of your models and create show strings 
+                                    with specific pics for different scenarios.
+                                </p>
+                                <a href="stableorg" class="feature-link">Learn More</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <img src="/img/tradewinds_logo.png" alt="Feature icon">
+                            </div>
+                            <div class="feature-content">
+                                <h5 class="feature-title">Reference Library</h5>
+                                <p class="feature-description">
+                                    Access our searchable reference library with links to model 
+                                    resources and expert articles.
+                                </p>
+                                <a href="refinfo" class="feature-link">Explore</a>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
-                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
-                        <div class="card-body" style="height:250px">
-                            <h5 class="card-title">Unlimited photo storage!</h5>
-                            <p class="card-text">Store as many photos of your models as you like, and create show strings with specific pics for different scenarios!</p>
-                            <a href="stableorg" class="btn btn-primary" style="position:absolute;top:85%;left:36%">Learn More!</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card rounded-5 border-primary" style="width:90%;margin-left:auto; margin-right:auto;">
-                        <img class="card-img-top" src="/img/tradewinds_logo.png" alt="Card image cap" style="height:50%;width:50%;margin-left:auto; margin-right:auto">
-                        <div class="card-body" style="height:250px">
-                            <h5 class="card-title">Need Model or Horse Info?</h5>
-                            <p class="card-text">No problem, Tradewinds features a large, searchable reference library with links to model resources and articles by hobby experts!</p>
-                            <a href="refinfo" class="btn btn-primary" style="position:absolute;top:85%;left:36%">See More!</a>
-                        </div>
-                    </div>
-                </div>
+            </div>
+        </div>
+
+        <div class="platform-info">
+            <div class="container text-center">
+                <p class="text-muted mb-0">
+                    Running on <em>@factor</em> using <em>@platform</em>
+                </p>
             </div>
         </div>
     </NotAuthorized>
 </AuthorizeView>
 
-Welcome to your new app running on <em>@factor</em> using <em>@platform</em>.
+<style>
+    .welcome-section {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        padding: 3rem 0;
+        border-radius: 20px;
+        margin: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .welcome-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .welcome-header h1 {
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .logo-container {
+        padding: 2rem;
+    }
+
+    .main-logo {
+        height: 120px;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        transition: transform 0.3s ease;
+    }
+
+    .main-logo:hover {
+        transform: scale(1.05);
+    }
+
+    .quick-actions .action-card {
+        display: block;
+        padding: 2rem;
+        background: white;
+        border-radius: 15px;
+        text-decoration: none;
+        color: inherit;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .quick-actions .action-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .action-icon {
+        font-size: 2.5rem;
+        color: #3498db;
+        margin-bottom: 1rem;
+    }
+
+    .action-content h5 {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .action-content p {
+        color: #6c757d;
+        margin: 0;
+        font-size: 0.95rem;
+    }
+
+    .hero-section {
+        padding: 4rem 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 242, 247, 0.9) 100%);
+        border-radius: 20px;
+        margin: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #9b59b6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+        line-height: 1.2;
+    }
+
+    .hero-subtitle {
+        font-size: 1.5rem;
+        color: #6c757d;
+        font-weight: 400;
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-description {
+        font-size: 1.1rem;
+        color: #495057;
+        line-height: 1.6;
+        margin-bottom: 2.5rem;
+    }
+
+    .hero-actions .btn {
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 50px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
+    }
+
+    .hero-logo img {
+        max-height: 300px;
+        filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1));
+    }
+
+    .features-section {
+        padding: 5rem 0;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        margin: 2rem 1rem;
+        border-radius: 20px;
+    }
+
+    .section-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+        font-size: 1.2rem;
+        color: #6c757d;
+        margin-bottom: 3rem;
+    }
+
+    .feature-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2.5rem 2rem;
+        text-align: center;
+        height: 100%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 40px rgba(102, 126, 234, 0.15);
+    }
+
+    .feature-icon {
+        margin-bottom: 1.5rem;
+    }
+
+    .feature-icon img {
+        height: 60px;
+        width: 60px;
+        object-fit: contain;
+        filter: hue-rotate(200deg) brightness(1.2);
+    }
+
+    .feature-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    .feature-description {
+        color: #6c757d;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        font-size: 0.95rem;
+    }
+
+    .feature-link {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: color 0.3s ease;
+    }
+
+    .feature-link:hover {
+        color: #2980b9;
+        text-decoration: none;
+    }
+
+    .platform-info {
+        padding: 2rem 0;
+        margin-top: 2rem;
+    }
+
+    .min-vh-50 {
+        min-height: 50vh;
+    }
+
+    @@media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+        }
+        
+        .section-title {
+            font-size: 2rem;
+        }
+        
+        .hero-actions .btn {
+            margin-bottom: 1rem;
+            width: 100%;
+        }
+        
+        .hero-actions .btn:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .feature-card {
+            padding: 2rem 1.5rem;
+        }
+    }
+</style>
 
 @code {
     private string factor => FormFactor.GetFormFactor();
