@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using MauiBlazorWeb.Web.Services.Mappers;
 using MauiBlazorWeb.Shared.Models;
+using System.Diagnostics; // Added
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -98,7 +99,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // This makes the server accessible on all network interfaces
-if (builder.Environment.IsDevelopment())
+// Changed: only when debugging (Visual Studio F5), not when ASPNETCORE_ENVIRONMENT == Development
+if (Debugger.IsAttached)
 {
     builder.WebHost.ConfigureKestrel(options =>
     {
@@ -208,9 +210,10 @@ app.MapDelete("/api/shows/{id}", async (string id, IShowService showService) =>
 }).RequireAuthorization();
 
 // Near the app.Run() call, add:
-if (app.Environment.IsDevelopment())
+// Changed: only when debugging (Visual Studio F5), not when ASPNETCORE_ENVIRONMENT == Development
+if (Debugger.IsAttached)
 {
-    // Allow connections from any hostname in development
+    // Allow connections from any hostname while debugging
     app.Urls.Add("https://127.0.0.1:7157");
     app.Urls.Add("https://*:7157");
 }
