@@ -3,369 +3,222 @@
 @using MauiBlazorWeb.Shared.Services
 @inject IRoleService RoleService
 
-<div class="role-management-container">
-    <h3>User Role Management</h3>
-    
-    @if (IsLoading)
-    {
-        <div class="loading">Loading user data...</div>
-    }
-    else if (SelectedUser == null)
-    {
-        <div class="user-selection">
-            <h4>Select a user to manage roles</h4>
-            <div class="search-box">
-                <input type="text" placeholder="Search users..." @bind-value="SearchTerm" @bind-value:event="oninput" />
-            </div>
-            <div class="user-list">
-                @if (Users?.Any() == true)
+<div class="row">
+    <div class="col-md-5">
+        <h4>Users</h4>
+        <div class="list-group">
+            @if (Users?.Count > 0)
+            {
+                @foreach (var u in Users)
                 {
-                    @foreach (var user in FilteredUsers)
-                    {
-                        <div class="user-item" @onclick="() => SelectUserAsync(user)">
-                            <span class="user-name">@user.UserName</span>
-                            <span class="user-email">@user.Email</span>
+                    var isActive = SelectedUser?.Id == u.Id ? "active" : "";
+                    <button class="list-group-item list-group-item-action @isActive"
+                            @onclick="() => SelectUserAsync(u)">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">@(!string.IsNullOrWhiteSpace(u.UserName) ? u.UserName : u.Email)</h6>
+                            <small>@(u.EmailConfirmed ? "Confirmed" : "Unconfirmed")</small>
                         </div>
-                    }
+                        <small>@u.Email</small>
+                    </button>
                 }
-                else
-                {
-                    <div class="no-users">No users found</div>
-                }
-            </div>
+            }
+            else
+            {
+                <div class="text-muted">No users found.</div>
+            }
         </div>
-    }
-    else
-    {
-        <div class="user-details">
-            <div class="user-header">
-                <h4>@SelectedUser.UserName</h4>
-                <div class="user-email">@SelectedUser.Email</div>
-                <button class="btn btn-sm btn-secondary" @onclick="ClearSelectedUser">Back to List</button>
+    </div>
+
+    <div class="col-md-7">
+        <h4>User Roles</h4>
+
+        @if (SelectedUser is null)
+        {
+            <div class="alert alert-info">Select a user to manage roles.</div>
+        }
+        else
+        {
+            <div class="mb-3">
+                <strong>User:</strong> @SelectedUser.UserName (@SelectedUser.Email)
             </div>
-            
-            <div class="current-roles">
-                <h5>Current Roles</h5>
-                @if (UserRoles?.Any() == true)
-                {
-                    <div class="role-badges">
-                        @foreach (var role in UserRoles)
-                        {
-                            <div class="role-badge">
-                                <span>@role</span>
-                                <button class="remove-role" @onclick="() => RemoveRoleAsync(role)" title="Remove role">
-                                    <i class="icon-remove">×</i>
-                                </button>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="no-roles">User has no roles assigned</div>
-                }
-            </div>
-            
-            <div class="add-role">
-                <h5>Add Role</h5>
-                <div class="role-selection">
-                    <select @bind="SelectedRole">
-                        <option value="">-- Select Role --</option>
-                        @foreach (var role in AvailableRoles)
+
+            <div class="mb-3">
+                <label class="form-label">Add Role</label>
+                <div class="input-group">
+                    <select class="form-select" @bind="RoleToAdd">
+                        <option value="">-- Select a role --</option>
+                        @foreach (var role in AssignableRoles)
                         {
                             <option value="@role">@role</option>
                         }
                     </select>
-                    <button class="btn btn-primary" @onclick="AddRoleAsync" disabled="@string.IsNullOrEmpty(SelectedRole)">
-                        Add Role
-                    </button>
+                    <button class="btn btn-primary" @onclick="AddRoleAsync" disabled="@string.IsNullOrEmpty(RoleToAdd)">Add</button>
+                </div>
+                @if (!AllRolesLoaded)
+                {
+                    <small class="text-warning">Roles not loaded yet.</small>
+                }
+            </div>
+
+            <div>
+                <label class="form-label">Current Roles</label>
+                <div>
+                    @if (UserRoles.Count == 0)
+                    {
+                        <span class="text-muted">No roles assigned.</span>
+                    }
+                    else
+                    {
+                        @foreach (var role in UserRoles)
+                        {
+                            <span class="badge text-bg-secondary me-2">
+                                @role
+                                <button type="button"
+                                        class="btn btn-sm btn-link link-light ms-1 p-0 align-baseline"
+                                        title="Remove"
+                                        @onclick="() => RemoveRoleAsync(role)">
+                                    ×
+                                </button>
+                            </span>
+                        }
+                    }
                 </div>
             </div>
-            
+
             @if (!string.IsNullOrEmpty(StatusMessage))
             {
-                <div class="@(StatusIsError ? "status-error" : "status-success")">
+                <div class="mt-3 alert @(StatusIsError ? "alert-danger" : "alert-success")">
                     @StatusMessage
                 </div>
             }
-        </div>
-    }
+        }
+    </div>
 </div>
-
-<style>
-    .role-management-container {
-        padding: 1rem;
-    }
-    
-    .loading {
-        padding: 1rem;
-        color: #666;
-    }
-    
-    .user-selection {
-        margin-bottom: 1rem;
-    }
-    
-    .search-box {
-        margin-bottom: 0.5rem;
-    }
-    
-    .search-box input {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-    
-    .user-list {
-        max-height: 400px;
-        overflow-y: auto;
-        border: 1px solid #eee;
-        border-radius: 4px;
-    }
-    
-    .user-item {
-        padding: 0.75rem;
-        border-bottom: 1px solid #eee;
-        cursor: pointer;
-    }
-    
-    .user-item:hover {
-        background-color: #f5f5f5;
-    }
-    
-    .user-item:last-child {
-        border-bottom: none;
-    }
-    
-    .user-name {
-        display: block;
-        font-weight: bold;
-    }
-    
-    .user-email {
-        display: block;
-        font-size: 0.875rem;
-        color: #666;
-    }
-    
-    .user-header {
-        margin-bottom: 1.5rem;
-    }
-    
-    .current-roles, .add-role {
-        margin-bottom: 1.5rem;
-    }
-    
-    .role-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-    
-    .role-badge {
-        display: inline-flex;
-        align-items: center;
-        background-color: #0d6efd;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 16px;
-    }
-    
-    .remove-role {
-        background: none;
-        border: none;
-        color: white;
-        margin-left: 0.5rem;
-        cursor: pointer;
-        font-size: 1.25rem;
-        line-height: 1;
-        padding: 0 0.25rem;
-    }
-    
-    .role-selection {
-        display: flex;
-        gap: 0.5rem;
-    }
-    
-    .role-selection select {
-        flex: 1;
-        padding: 0.375rem 0.75rem;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-    }
-    
-    .no-roles, .no-users {
-        padding: 1rem;
-        color: #666;
-        font-style: italic;
-    }
-    
-    .status-error, .status-success {
-        padding: 0.75rem;
-        border-radius: 4px;
-        margin-top: 1rem;
-    }
-    
-    .status-error {
-        background-color: #f8d7da;
-        color: #842029;
-        border: 1px solid #f5c2c7;
-    }
-    
-    .status-success {
-        background-color: #d1e7dd;
-        color: #0f5132;
-        border: 1px solid #badbcc;
-    }
-</style>
 
 @code {
     [Parameter] public List<UserDto> Users { get; set; } = new();
     [Parameter] public UserDto? SelectedUser { get; set; }
     [Parameter] public EventCallback<UserDto> OnUserSelected { get; set; }
-    
-    private IEnumerable<string> UserRoles { get; set; } = Array.Empty<string>();
-    private IEnumerable<string> AllRoles { get; set; } = Array.Empty<string>();
-    private string SearchTerm = string.Empty;
-    private string SelectedRole = string.Empty;
-    private bool IsLoading = false;
-    private string StatusMessage = string.Empty;
-    private bool StatusIsError = false;
-    
+
+    private List<string> AllRoles { get; set; } = new();
+    private bool AllRolesLoaded { get; set; }
+    private List<string> UserRoles { get; set; } = new();
+    private List<string> AssignableRoles { get; set; } = new();
+    private string RoleToAdd { get; set; } = string.Empty;
+
+    private string StatusMessage { get; set; } = string.Empty;
+    private bool StatusIsError { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
-        IsLoading = true;
+        await LoadAllRolesAsync();
+        if (SelectedUser is not null)
+            await LoadUserRolesAsync(SelectedUser.Id);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SelectedUser is not null)
+        {
+            await LoadUserRolesAsync(SelectedUser.Id);
+        }
+        UpdateAssignableRoles();
+    }
+
+    private async Task LoadAllRolesAsync()
+    {
         try
         {
-            AllRoles = await RoleService.GetAllRolesAsync();
+            AllRoles = (await RoleService.GetAllRolesAsync()).ToList();
+            AllRolesLoaded = true;
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Error loading roles: {ex.Message}";
-            StatusIsError = true;
+            // Fallback so you can proceed (and see the error)
+            AllRoles = ApplicationRoles.AllRoles.ToList();
+            AllRolesLoaded = true;
+            SetStatus($"Could not load roles from service; using fallback. Details: {ex.Message}", true);
         }
-        finally
-        {
-            IsLoading = false;
-        }
+        UpdateAssignableRoles();
     }
-    
-    protected override async Task OnParametersSetAsync()
+
+    private async Task LoadUserRolesAsync(string userId)
     {
-        if (SelectedUser != null)
+        try
         {
-            await LoadUserRolesAsync();
+            var roles = await RoleService.GetUserRolesAsync(userId);
+            UserRoles = roles.ToList();
+            // keep SelectedUser.Roles in sync if present
+            SelectedUser!.Roles = UserRoles.ToList();
         }
+        catch (Exception ex)
+        {
+            UserRoles = new();
+            SetStatus($"Error loading user roles: {ex.Message}", true);
+        }
+        UpdateAssignableRoles();
     }
-    
-    private IEnumerable<UserDto> FilteredUsers => 
-        Users.Where(u => string.IsNullOrEmpty(SearchTerm) || 
-                        u.UserName?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true ||
-                        u.Email?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true).ToList();
-    
-    private IEnumerable<string> AvailableRoles => 
-        AllRoles.Except(UserRoles).ToList();
-    
+
+    private void UpdateAssignableRoles()
+    {
+        AssignableRoles = AllRoles.Except(UserRoles, StringComparer.OrdinalIgnoreCase).OrderBy(r => r).ToList();
+        if (!AssignableRoles.Contains(RoleToAdd, StringComparer.OrdinalIgnoreCase))
+            RoleToAdd = string.Empty;
+    }
+
     private async Task SelectUserAsync(UserDto user)
     {
-        SelectedUser = user;
         await OnUserSelected.InvokeAsync(user);
-        await LoadUserRolesAsync();
-        StatusMessage = string.Empty;
+        await LoadUserRolesAsync(user.Id);
+        ClearStatus();
     }
-    
-    private void ClearSelectedUser()
-    {
-        SelectedUser = null;
-        UserRoles = Array.Empty<string>();
-        StatusMessage = string.Empty;
-        OnUserSelected.InvokeAsync(null);
-    }
-    
-    private async Task LoadUserRolesAsync()
-    {
-        if (SelectedUser != null)
-        {
-            IsLoading = true;
-            try
-            {
-                UserRoles = await RoleService.GetUserRolesAsync(SelectedUser.Id);
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error loading user roles: {ex.Message}";
-                StatusIsError = true;
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-    }
-    
+
     private async Task AddRoleAsync()
     {
-        if (SelectedUser != null && !string.IsNullOrEmpty(SelectedRole))
+        if (SelectedUser is null || string.IsNullOrEmpty(RoleToAdd))
+            return;
+
+        var ok = await RoleService.AddUserToRoleAsync(SelectedUser.Id, RoleToAdd);
+        if (ok)
         {
-            IsLoading = true;
-            try
-            {
-                var result = await RoleService.AddUserToRoleAsync(SelectedUser.Id, SelectedRole);
-                if (result)
-                {
-                    StatusMessage = $"Role '{SelectedRole}' added successfully";
-                    StatusIsError = false;
-                    await LoadUserRolesAsync();
-                    SelectedRole = string.Empty;
-                }
-                else
-                {
-                    StatusMessage = $"Failed to add role '{SelectedRole}'";
-                    StatusIsError = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error: {ex.Message}";
-                StatusIsError = true;
-            }
-            finally
-            {
-                IsLoading = false;
-            }
+            SetStatus($"Added role '{RoleToAdd}'", false);
+            await LoadUserRolesAsync(SelectedUser.Id);
+            RoleToAdd = string.Empty;
         }
+        else
+        {
+            SetStatus($"Failed to add role '{RoleToAdd}'", true);
+        }
+        UpdateAssignableRoles();
     }
-    
+
     private async Task RemoveRoleAsync(string role)
     {
-        if (SelectedUser != null)
+        if (SelectedUser is null)
+            return;
+
+        var ok = await RoleService.RemoveUserFromRoleAsync(SelectedUser.Id, role);
+        if (ok)
         {
-            IsLoading = true;
-            try
-            {
-                var result = await RoleService.RemoveUserFromRoleAsync(SelectedUser.Id, role);
-                if (result)
-                {
-                    StatusMessage = $"Role '{role}' removed successfully";
-                    StatusIsError = false;
-                    await LoadUserRolesAsync();
-                }
-                else
-                {
-                    StatusMessage = $"Failed to remove role '{role}'";
-                    StatusIsError = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error: {ex.Message}";
-                StatusIsError = true;
-            }
-            finally
-            {
-                IsLoading = false;
-            }
+            SetStatus($"Removed role '{role}'", false);
+            await LoadUserRolesAsync(SelectedUser.Id);
         }
+        else
+        {
+            SetStatus($"Failed to remove role '{role}'", true);
+        }
+        UpdateAssignableRoles();
+    }
+
+    private void SetStatus(string msg, bool isError)
+    {
+        StatusMessage = msg;
+        StatusIsError = isError;
+    }
+
+    private void ClearStatus()
+    {
+        StatusMessage = string.Empty;
+        StatusIsError = false;
     }
 }

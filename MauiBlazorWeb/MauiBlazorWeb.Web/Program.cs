@@ -135,6 +135,10 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowMauiApps");
 
+// Must come BEFORE mapping endpoints (including MapRazorComponents)
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseStaticFiles();
 app.UseAntiforgery();
 
@@ -145,10 +149,9 @@ app.MapRazorComponents<App>()
 
 // Needed for external clients to log in
 app.MapGroup("/identity").MapIdentityApi<ApplicationUser>();
-// Needed for Identity Blazor components
 app.MapAdditionalIdentityEndpoints();
 
-//Add the weather API endpoint and require authorization
+// API mappings follow...
 app.MapGet("/api/weather", async (IWeatherService weatherService) =>
 {
     var forecasts = await weatherService.GetWeatherForecastsAsync();
@@ -359,7 +362,7 @@ app.MapGet("/api/roles", async (IRoleService roleService) =>
 {
     var roles = await roleService.GetAllRolesAsync();
     return Results.Ok(roles);
-}).RequireAuthorization();
+}); // TEMP: remove .RequireAuthorization() until bearer is wired
 
 app.MapPost("/api/roles", async (string name, RoleManager<IdentityRole> roleManager) =>
 {
