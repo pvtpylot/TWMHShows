@@ -7,6 +7,7 @@ namespace MauiBlazorWeb.Shared.Models
         public const string TrialUser = "TrialUser";
         public const string User = "User";
         public const string Moderator = "Moderator";
+        public const string ShowHolder = "ShowHolder";
 
         public static readonly IReadOnlyList<string> AllRoles = new List<string>
         {
@@ -14,7 +15,8 @@ namespace MauiBlazorWeb.Shared.Models
             Judge,
             TrialUser,
             User,
-            Moderator
+            Moderator,
+            ShowHolder
         };
     }
 }

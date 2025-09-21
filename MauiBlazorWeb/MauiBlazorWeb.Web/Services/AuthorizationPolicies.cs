@@ -18,6 +18,12 @@ namespace MauiBlazorWeb.Web.Services
             
             options.AddPolicy("RequireUserRole", 
                 policy => policy.RequireRole(ApplicationRoles.User, ApplicationRoles.TrialUser, ApplicationRoles.Admin));
+            
+            options.AddPolicy("RequireShowHolderRole", 
+                policy => policy.RequireRole(ApplicationRoles.ShowHolder, ApplicationRoles.Admin));
+                
+            options.AddPolicy("RequireShowManagementRole", 
+                policy => policy.RequireRole(ApplicationRoles.ShowHolder, ApplicationRoles.Admin));
         }
     }
 }

@@ -180,6 +180,12 @@ app.MapGet("/api/shows", async (IShowService showService) =>
     return Results.Ok(await showService.GetAllShowsAsync());
 }).RequireAuthorization();
 
+app.MapPost("/api/shows", async (ShowDto showDto, IShowService showService) =>
+{
+    var result = await showService.CreateShowAsync(showDto);
+    return Results.Created($"/api/shows/{result.Id}", result);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.ShowHolder, ApplicationRoles.Admin));
+
 app.MapGet("/api/shows/{id}", async (string id, IShowService showService) =>
 {
     var show = await showService.GetShowByIdAsync(id);
