@@ -32,28 +32,15 @@ namespace MauiBlazorWeb
             // Register authentication services
             builder.Services.AddAuthorizationCore(options => 
             {
-                // Basic policies
-                options.AddPolicy("RequireAuthenticatedUser", policy => 
-                    policy.RequireAuthenticatedUser());
-                
-                // Role-based policies
-                options.AddPolicy("RequireAdminRole", policy => 
-                    policy.RequireRole(ApplicationRoles.Admin));
-                
-                options.AddPolicy("RequireJudgeRole", policy => 
-                    policy.RequireRole(ApplicationRoles.Judge, ApplicationRoles.Admin));
-                
-                options.AddPolicy("RequireModeratorRole", policy => 
-                    policy.RequireRole(ApplicationRoles.Moderator, ApplicationRoles.Admin));
-                
-                options.AddPolicy("RequireUserRole", policy => 
-                    policy.RequireRole(ApplicationRoles.User, ApplicationRoles.TrialUser, ApplicationRoles.Admin));
+                options.AddPolicy("RequireAuthenticatedUser", policy => policy.RequireAuthenticatedUser());
+                options.AddPolicy("RequireAdminRole", policy => policy.RequireRole(ApplicationRoles.Admin));
+                options.AddPolicy("RequireJudgeRole", policy => policy.RequireRole(ApplicationRoles.Judge, ApplicationRoles.Admin));
+                options.AddPolicy("RequireModeratorRole", policy => policy.RequireRole(ApplicationRoles.Moderator, ApplicationRoles.Admin));
+                options.AddPolicy("RequireUserRole", policy => policy.RequireRole(ApplicationRoles.User, ApplicationRoles.TrialUser, ApplicationRoles.Admin));
 
-                // You can also add dynamic policies based on the roles
                 foreach (var role in ApplicationRoles.AllRoles)
                 {
-                    options.AddPolicy($"RequiresRole_{role}", policy => 
-                        policy.RequireRole(role));
+                    options.AddPolicy($"RequiresRole_{role}", policy => policy.RequireRole(role));
                 }
             });
             builder.Services.AddScoped<INetworkDiagnostics, DefaultNetworkDiagnostics>();
@@ -64,16 +51,18 @@ namespace MauiBlazorWeb
             builder.Services.AddScoped<AuthenticationStateProvider>(sp => 
                 sp.GetRequiredService<MauiAuthenticationStateProvider>());
 
-            // Add device-specific services used by the MauiBlazorWeb.Shared project
+            // Device/shared services
             builder.Services.AddSingleton<IFormFactor, FormFactor>();
             builder.Services.AddScoped<IWeatherService, WeatherService>();
-
-            // Add the user service registration here
             builder.Services.AddScoped<IUserService, MauiUserService>();
 
-            // Add these service registrations
+            // Auth helpers
             builder.Services.AddSingleton<IAuthService, MauiAuthService>();
             builder.Services.AddScoped<IRoleService, MauiRoleService>();
+
+            // Missing registrations for MauiDataService dependencies
+            builder.Services.AddScoped<IHttpClientFactory, HttpClientFactory>();
+            builder.Services.AddScoped<IErrorHandler, DefaultErrorHandler>();
 
 #if ANDROID
             builder.Services.AddSingleton(sp => 
@@ -94,7 +83,7 @@ namespace MauiBlazorWeb
             });
 #endif
 
-            // Register data services
+            // Data services
             builder.Services.AddScoped<IDataService, MauiDataService>();
             builder.Services.AddScoped<IShowService, MauiShowService>();
             builder.Services.AddScoped<IShowClassService, MauiShowClassService>();

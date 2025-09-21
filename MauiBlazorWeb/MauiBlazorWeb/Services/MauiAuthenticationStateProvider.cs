@@ -309,7 +309,31 @@ namespace MauiBlazorWeb.Services
 
         private ClaimsPrincipal CreateAuthenticatedUser(string email)
         {
-            var claims = new[] { new Claim(ClaimTypes.Name, email) };  //TODO: Add more claims as needed
+            // Build claims from the persisted access token so pages can find NameIdentifier and Roles
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, email),
+                new Claim(ClaimTypes.Email, email)
+            };
+
+            var userId = _accessToken?.LoginResponse?.UserId;
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
+            }
+
+            var roles = _accessToken?.LoginResponse?.Roles;
+            if (roles is not null && roles.Length > 0)
+            {
+                foreach (var role in roles)
+                {
+                    if (!string.IsNullOrWhiteSpace(role))
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, role));
+                    }
+                }
+            }
+
             var identity = new ClaimsIdentity(claims, AuthenticationType);
             return new ClaimsPrincipal(identity);
         }
