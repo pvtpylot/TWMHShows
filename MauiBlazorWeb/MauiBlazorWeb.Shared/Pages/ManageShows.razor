@@ -1,0 +1,158 @@
+﻿@page "/manage-shows"
+@using MauiBlazorWeb.Shared.Models.DTOs
+@using MauiBlazorWeb.Shared.Services
+@using MauiBlazorWeb.Shared.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IShowService ShowService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = $"{ApplicationRoles.ShowHolder},{ApplicationRoles.Admin}")]
+
+<PageTitle>Manage Shows</PageTitle>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Manage Shows</h1>
+        <a href="/create-show" class="btn btn-primary">
+            <i class="oi oi-plus"></i> Create New Show
+        </a>
+    </div>
+
+    @if (loading)
+    {
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    }
+    else if (shows == null || !shows.Any())
+    {
+        <div class="alert alert-info" role="alert">
+            You haven't created any shows yet. Click the "Create New Show" button to get started.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Show Date</th>
+                        <th>Status</th>
+                        <th>Type</th>
+                        <th>Format</th>
+                        <th>Privacy</th>
+                        <th>Divisions</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var show in shows)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@show.Name</strong>
+                                @if (!string.IsNullOrEmpty(show.Description))
+                                {
+                                    <br><small class="text-muted">@(show.Description.Length > 50 ? show.Description.Substring(0, 50) + "..." : show.Description)</small>
+                                }
+                            </td>
+                            <td>@show.ShowDate.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                <span class="badge @GetStatusBadgeClass(show.Status)">
+                                    @show.Status
+                                </span>
+                            </td>
+                            <td>@show.ShowType</td>
+                            <td>@show.ShowFormat</td>
+                            <td>
+                                @if (show.IsPrivate)
+                                {
+                                    <span class="badge bg-warning">Private</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Public</span>
+                                }
+                            </td>
+                            <td>@show.Divisions.Count</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="/edit-show/@show.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="oi oi-pencil"></i> Edit
+                                    </a>
+                                    <button @onclick="() => DeleteShow(show.Id)" class="btn btn-sm btn-outline-danger" 
+                                            @onclick:preventDefault="true">
+                                        <i class="oi oi-trash"></i> Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ShowDto>? shows;
+    private bool loading = true;
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            await LoadShows();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+
+    private async Task LoadShows()
+    {
+        loading = true;
+        try
+        {
+            var allShows = await ShowService.GetAllShowsAsync();
+            // Filter to only shows created by this show holder
+            shows = allShows.Where(s => s.ShowHolderId.ToString() == userId).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading shows: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task DeleteShow(string showId)
+    {
+        if (await ShowService.DeleteShowAsync(showId))
+        {
+            await LoadShows();
+        }
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Upcoming" => "bg-info",
+            "InProgress" => "bg-warning",
+            "Completed" => "bg-success",
+            "Cancelled" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

@@ -1,0 +1,508 @@
+﻿@page "/create-show"
+@using MauiBlazorWeb.Shared.Models.DTOs
+@using MauiBlazorWeb.Shared.Services
+@using MauiBlazorWeb.Shared.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IShowService ShowService
+@inject IUserService UserService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = $"{ApplicationRoles.ShowHolder},{ApplicationRoles.Admin}")]
+
+<PageTitle>Create New Show</PageTitle>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Create New Show</h1>
+        <a href="/manage-shows" class="btn btn-secondary">
+            <i class="oi oi-arrow-left"></i> Back to Shows
+        </a>
+    </div>
+
+    <EditForm Model="show" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="row">
+            <!-- Basic Information -->
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Show Name *</label>
+                            <InputText id="name" class="form-control" @bind-Value="show.Name" />
+                            <ValidationMessage For="@(() => show.Name)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <InputTextArea id="description" class="form-control" rows="3" @bind-Value="show.Description" />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="showDate" class="form-label">Show Date *</label>
+                                <InputDate id="showDate" class="form-control" @bind-Value="show.ShowDate" />
+                                <ValidationMessage For="@(() => show.ShowDate)" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="endDate" class="form-label">End Date (optional)</label>
+                                <InputDate id="endDate" class="form-control" @bind-Value="show.EndDate" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Show Configuration -->
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Show Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="showType" class="form-label">Show Type</label>
+                                <InputSelect id="showType" class="form-select" @bind-Value="show.ShowType">
+                                    <option value="LiveShow">Live Show</option>
+                                    <option value="PhotoShow">Photo Show</option>
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="showFormat" class="form-label">Show Format</label>
+                                <InputSelect id="showFormat" class="form-select" @bind-Value="show.ShowFormat">
+                                    <option value="Regular">Regular</option>
+                                    <option value="NanQualifying">NAN Qualifying</option>
+                                    <option value="Championship">Championship</option>
+                                    <option value="Specialty">Specialty</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <InputCheckbox id="isNanQualifying" class="form-check-input" @bind-Value="show.IsNanQualifying" />
+                                <label class="form-check-label" for="isNanQualifying">
+                                    NAN Qualifying Show
+                                </label>
+                            </div>
+                            @if (show.IsNanQualifying)
+                            {
+                                <div class="mt-2">
+                                    <label for="namhsaGuidelines" class="form-label">NAMHSA Guidelines</label>
+                                    <InputTextArea id="namhsaGuidelines" class="form-control" rows="2" @bind-Value="show.NamhsaGuidelines" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Access Control -->
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Access Control</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <InputCheckbox id="isPrivate" class="form-check-input" @bind-Value="show.IsPrivate" />
+                                <label class="form-check-label" for="isPrivate">
+                                    Private Show (invitation only)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <InputCheckbox id="allowMemberOnlyEntries" class="form-check-input" @bind-Value="show.AllowMemberOnlyEntries" />
+                                <label class="form-check-label" for="allowMemberOnlyEntries">
+                                    Limit entries to registered members only
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="maxEntriesPerUser" class="form-label">Max Entries Per User</label>
+                            <InputNumber id="maxEntriesPerUser" class="form-control" @bind-Value="show.MaxEntriesPerUser" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Important Dates -->
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Important Dates</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="entryDeadline" class="form-label">Entry Deadline</label>
+                            <InputDate id="entryDeadline" class="form-control" @bind-Value="show.EntryDeadline" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="judgingDeadline" class="form-label">Judging Deadline</label>
+                            <InputDate id="judgingDeadline" class="form-control" @bind-Value="show.JudgingDeadline" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="judgeId" class="form-label">Judge (optional)</label>
+                            <InputSelect id="judgeId" class="form-select" @bind-Value="show.JudgeId">
+                                <option value="">Select a judge...</option>
+                                @if (judges != null)
+                                {
+                                    @foreach (var judge in judges)
+                                    {
+                                        <option value="@judge.Id">@judge.FirstName @judge.LastName (@judge.Email)</option>
+                                    }
+                                }
+                            </InputSelect>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Divisions Section -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Divisions & Classes</h5>
+                <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddDivision">
+                    <i class="oi oi-plus"></i> Add Division
+                </button>
+            </div>
+            <div class="card-body">
+                @if (show.Divisions.Any())
+                {
+                    @for (int i = 0; i < show.Divisions.Count; i++)
+                    {
+                        var divisionIndex = i;
+                        var division = show.Divisions[divisionIndex];
+                        
+                        <div class="border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h6>Division @(divisionIndex + 1)</h6>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        @onclick="() => RemoveDivision(divisionIndex)">
+                                    <i class="oi oi-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                                    <label class="form-label">Division Name</label>
+                                    <InputText class="form-control" @bind-Value="division.Name" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Division Type</label>
+                                    <InputSelect class="form-select" @bind-Value="division.DivisionType">
+                                        <option value="Halter">Halter</option>
+                                        <option value="Performance">Performance</option>
+                                        <option value="Collectibility">Collectibility</option>
+                                        <option value="Workmanship">Workmanship</option>
+                                        <option value="Other">Other</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <label class="form-label">Description</label>
+                                <InputText class="form-control" @bind-Value="division.Description" />
+                            </div>
+
+                            <!-- Classes within this division -->
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong>Classes</strong>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                            @onclick="() => AddClassToDivision(divisionIndex)">
+                                        <i class="oi oi-plus"></i> Add Class
+                                    </button>
+                                </div>
+                                
+                                @if (division.ShowClasses.Any())
+                                {
+                                    @for (int j = 0; j < division.ShowClasses.Count; j++)
+                                    {
+                                        var classIndex = j;
+                                        var showClass = division.ShowClasses[classIndex];
+                                        
+                                        <div class="bg-light p-2 mb-2 rounded">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small">Class Name</label>
+                                                            <InputText class="form-control form-control-sm" @bind-Value="showClass.Name" />
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label class="form-label small">Class Number</label>
+                                                            <InputNumber class="form-control form-control-sm" @bind-Value="showClass.ClassNumber" />
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label class="form-label small">Max Entries</label>
+                                                            <InputNumber class="form-control form-control-sm" @bind-Value="showClass.MaxEntries" />
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Class Categorization -->
+                                                    @if (division.DivisionType == "Halter")
+                                                    {
+                                                        <div class="row mt-2">
+                                                            <div class="col-md-4">
+                                                                <label class="form-label small">Breed Category</label>
+                                                                <InputSelect class="form-select form-select-sm" @bind-Value="showClass.BreedCategory">
+                                                                    <option value="">Any</option>
+                                                                    <option value="SportBreeds">Sport Breeds</option>
+                                                                    <option value="LightBreeds">Light Breeds</option>
+                                                                    <option value="DraftBreeds">Draft Breeds</option>
+                                                                    <option value="PonyBreeds">Pony Breeds</option>
+                                                                    <option value="StockBreeds">Stock Breeds</option>
+                                                                    <option value="OtherBreeds">Other Breeds</option>
+                                                                </InputSelect>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <label class="form-label small">Finish Type</label>
+                                                                <InputSelect class="form-select form-select-sm" @bind-Value="showClass.FinishType">
+                                                                    <option value="">Any</option>
+                                                                    <option value="OriginalFinish">Original Finish</option>
+                                                                    <option value="Custom">Custom</option>
+                                                                    <option value="ArtistResin">Artist Resin</option>
+                                                                </InputSelect>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <label class="form-label small">Scale</label>
+                                                                <InputSelect class="form-select form-select-sm" @bind-Value="showClass.ScaleRestriction">
+                                                                    <option value="">Any</option>
+                                                                    <option value="Traditional">Traditional</option>
+                                                                    <option value="Classic">Classic</option>
+                                                                    <option value="Stablemate">Stablemate</option>
+                                                                    <option value="Micro">Micro</option>
+                                                                </InputSelect>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    else if (division.DivisionType == "Performance")
+                                                    {
+                                                        <div class="row mt-2">
+                                                            <div class="col-md-6">
+                                                                <label class="form-label small">Performance Type</label>
+                                                                <InputSelect class="form-select form-select-sm" @bind-Value="showClass.PerformanceType">
+                                                                    <option value="">Select Performance Type</option>
+                                                                    <option value="Hunter">Hunter</option>
+                                                                    <option value="Jumper">Jumper</option>
+                                                                    <option value="Dressage">Dressage</option>
+                                                                    <option value="EnglishPleasure">English Pleasure</option>
+                                                                    <option value="EnglishTrail">English Trail</option>
+                                                                    <option value="Reining">Reining</option>
+                                                                    <option value="WesternPleasure">Western Pleasure</option>
+                                                                    <option value="BarrelRacing">Barrel Racing</option>
+                                                                    <option value="WesternTrail">Western Trail</option>
+                                                                    <option value="Costume">Costume</option>
+                                                                    <option value="Parade">Parade</option>
+                                                                    <option value="Harness">Harness</option>
+                                                                    <option value="Scene">Scene</option>
+                                                                    <option value="Setup">Setup</option>
+                                                                </InputSelect>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label small">Scale</label>
+                                                                <InputSelect class="form-select form-select-sm" @bind-Value="showClass.ScaleRestriction">
+                                                                    <option value="">Any</option>
+                                                                    <option value="Traditional">Traditional</option>
+                                                                    <option value="Classic">Classic</option>
+                                                                    <option value="Stablemate">Stablemate</option>
+                                                                    <option value="Micro">Micro</option>
+                                                                </InputSelect>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    else if (division.DivisionType == "Collectibility")
+                                                    {
+                                                        <div class="row mt-2">
+                                                            <div class="col-md-6">
+                                                                <label class="form-label small">Collectibility Type</label>
+                                                                <InputSelect class="form-select form-select-sm" @bind-Value="showClass.CollectibilityType">
+                                                                    <option value="">Select Type</option>
+                                                                    <option value="BreyerModels">Breyer Models</option>
+                                                                    <option value="StoneModels">Stone Models</option>
+                                                                    <option value="HagenRenaker">Hagen Renaker</option>
+                                                                    <option value="VintageModels">Vintage Models</option>
+                                                                    <option value="LimitedEdition">Limited Edition</option>
+                                                                    <option value="TestColors">Test Colors</option>
+                                                                    <option value="OtherCollectible">Other Collectible</option>
+                                                                </InputSelect>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label small">Scale</label>
+                                                                <InputSelect class="form-select form-select-sm" @bind-Value="showClass.ScaleRestriction">
+                                                                    <option value="">Any</option>
+                                                                    <option value="Traditional">Traditional</option>
+                                                                    <option value="Classic">Classic</option>
+                                                                    <option value="Stablemate">Stablemate</option>
+                                                                    <option value="Micro">Micro</option>
+                                                                </InputSelect>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-danger ms-2"
+                                                        @onclick="() => RemoveClassFromDivision(divisionIndex, classIndex)">
+                                                    <i class="oi oi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <p>No divisions created yet. Click "Add Division" to get started.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Additional Metadata -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Additional Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="additionalMetadata" class="form-label">Additional Metadata (JSON)</label>
+                    <InputTextArea id="additionalMetadata" class="form-control" rows="4" @bind-Value="show.AdditionalMetadata" />
+                    <div class="form-text">Enter any additional show information in JSON format for future use.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="d-flex justify-content-between">
+            <a href="/manage-shows" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="oi oi-check"></i> Create Show
+            </button>
+        </div>
+        
+        <ValidationSummary />
+    </EditForm>
+</div>
+
+@code {
+    private ShowDto show = new();
+    private List<UserDto>? judges;
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            
+            // Initialize with default values
+            show.ShowDate = DateTime.Today.AddDays(30);
+            show.EntryDeadline = DateTime.Today.AddDays(15);
+            show.JudgingDeadline = DateTime.Today.AddDays(35);
+            show.ShowHolderId = int.Parse(userId ?? "0");
+
+            await LoadJudges();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+
+    private async Task LoadJudges()
+    {
+        try
+        {
+            var allUsers = await UserService.GetAllUsersAsync();
+            judges = allUsers.Where(u => u.Roles.Contains(ApplicationRoles.Judge)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading judges: {ex.Message}");
+        }
+    }
+
+    private void AddDivision()
+    {
+        var newDivision = new DivisionDto
+        {
+            Name = $"Division {show.Divisions.Count + 1}",
+            DivisionType = "Halter",
+            SortOrder = show.Divisions.Count,
+            ShowClasses = new List<ShowClassDto>()
+        };
+        show.Divisions.Add(newDivision);
+    }
+
+    private void RemoveDivision(int index)
+    {
+        if (index >= 0 && index < show.Divisions.Count)
+        {
+            show.Divisions.RemoveAt(index);
+        }
+    }
+
+    private void AddClassToDivision(int divisionIndex)
+    {
+        if (divisionIndex >= 0 && divisionIndex < show.Divisions.Count)
+        {
+            var division = show.Divisions[divisionIndex];
+            var newClass = new ShowClassDto
+            {
+                Name = $"Class {division.ShowClasses.Count + 1}",
+                ClassNumber = division.ShowClasses.Count + 1,
+                MaxEntries = 3,
+                SortOrder = division.ShowClasses.Count,
+                DivisionId = long.Parse(division.Id),
+                ShowId = int.Parse(show.Id)
+            };
+            division.ShowClasses.Add(newClass);
+        }
+    }
+
+    private void RemoveClassFromDivision(int divisionIndex, int classIndex)
+    {
+        if (divisionIndex >= 0 && divisionIndex < show.Divisions.Count)
+        {
+            var division = show.Divisions[divisionIndex];
+            if (classIndex >= 0 && classIndex < division.ShowClasses.Count)
+            {
+                division.ShowClasses.RemoveAt(classIndex);
+            }
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            await ShowService.CreateShowAsync(show);
+            NavigationManager.NavigateTo("/manage-shows");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating show: {ex.Message}");
+        }
+    }
+}

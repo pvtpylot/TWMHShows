@@ -1,0 +1,289 @@
+﻿@page "/show-details/{ShowId}"
+@using MauiBlazorWeb.Shared.Models.DTOs
+@using MauiBlazorWeb.Shared.Services
+@using MauiBlazorWeb.Shared.Models
+@using Microsoft.AspNetCore.Authorization
+@inject IShowService ShowService
+@inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = $"{ApplicationRoles.User},{ApplicationRoles.TrialUser},{ApplicationRoles.Admin}")]
+
+<PageTitle>@(show?.Name ?? "Show Details")</PageTitle>
+
+<div class="container">
+    @if (loading)
+    {
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (show == null)
+    {
+        <div class="alert alert-danger" role="alert">
+            Show not found or you don't have permission to view it.
+        </div>
+        <a href="/shows" class="btn btn-secondary">Back to Shows</a>
+    }
+    else
+    {
+        <!-- Show Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h1>@show.Name</h1>
+                <div class="d-flex gap-2 mb-2">
+                    <span class="badge @GetStatusBadgeClass(show.Status)">@show.Status</span>
+                    <span class="badge bg-info">@show.ShowType</span>
+                    <span class="badge bg-secondary">@show.ShowFormat</span>
+                    @if (show.IsNanQualifying)
+                    {
+                        <span class="badge bg-warning text-dark">NAN Qualifying</span>
+                    }
+                    @if (show.IsPrivate)
+                    {
+                        <span class="badge bg-danger">Private</span>
+                    }
+                </div>
+            </div>
+            <div>
+                <a href="/shows" class="btn btn-secondary me-2">
+                    <i class="oi oi-arrow-left"></i> Back to Shows
+                </a>
+                @if (show.Status == "Upcoming" && (!show.EntryDeadline.HasValue || show.EntryDeadline > DateTime.Now))
+                {
+                    <a href="/enter-show/@show.Id" class="btn btn-success">
+                        <i class="oi oi-plus"></i> Enter This Show
+                    </a>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(show.Description))
+        {
+            <div class="card mb-4">
+                <div class="card-body">
+                    <p class="card-text">@show.Description</p>
+                </div>
+            </div>
+        }
+
+        <!-- Show Information -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Show Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-5">Show Date:</dt>
+                            <dd class="col-sm-7">
+                                @show.ShowDate.ToString("MMMM dd, yyyy")
+                                @if (show.EndDate.HasValue && show.EndDate != show.ShowDate)
+                                {
+                                    <text> - @show.EndDate.Value.ToString("MMMM dd, yyyy")</text>
+                                }
+                            </dd>
+                            
+                            <dt class="col-sm-5">Show Holder:</dt>
+                            <dd class="col-sm-7">@show.ShowHolderName</dd>
+                            
+                            <dt class="col-sm-5">Judge:</dt>
+                            <dd class="col-sm-7">@(string.IsNullOrEmpty(show.JudgeName) ? "To be announced" : show.JudgeName)</dd>
+                            
+                            @if (show.EntryDeadline.HasValue)
+                            {
+                                <dt class="col-sm-5">Entry Deadline:</dt>
+                                <dd class="col-sm-7">
+                                    <span class="@(show.EntryDeadline < DateTime.Now ? "text-danger" : (show.EntryDeadline < DateTime.Now.AddDays(7) ? "text-warning" : ""))">
+                                        @show.EntryDeadline.Value.ToString("MMMM dd, yyyy")
+                                    </span>
+                                </dd>
+                            }
+                            
+                            @if (show.JudgingDeadline.HasValue)
+                            {
+                                <dt class="col-sm-5">Judging Deadline:</dt>
+                                <dd class="col-sm-7">@show.JudgingDeadline.Value.ToString("MMMM dd, yyyy")</dd>
+                            }
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Entry Guidelines</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-6">Max Entries per User:</dt>
+                            <dd class="col-sm-6">@show.MaxEntriesPerUser</dd>
+                            
+                            <dt class="col-sm-6">Member Restriction:</dt>
+                            <dd class="col-sm-6">@(show.AllowMemberOnlyEntries ? "Members Only" : "Open to All")</dd>
+                            
+                            <dt class="col-sm-6">Total Divisions:</dt>
+                            <dd class="col-sm-6">@show.Divisions.Count</dd>
+                            
+                            <dt class="col-sm-6">Total Classes:</dt>
+                            <dd class="col-sm-6">@show.Divisions.Sum(d => d.ShowClasses.Count)</dd>
+                        </dl>
+                        
+                        @if (show.IsNanQualifying && !string.IsNullOrEmpty(show.NamhsaGuidelines))
+                        {
+                            <div class="mt-3">
+                                <h6>NAMHSA Guidelines:</h6>
+                                <p class="text-muted">@show.NamhsaGuidelines</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Divisions and Classes -->
+        <div class="card">
+            <div class="card-header">
+                <h5>Divisions & Classes</h5>
+            </div>
+            <div class="card-body">
+                @if (show.Divisions.Any())
+                {
+                    @foreach (var division in show.Divisions.OrderBy(d => d.SortOrder))
+                    {
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2">
+                                @division.Name 
+                                <span class="badge bg-primary">@division.DivisionType</span>
+                            </h6>
+                            
+                            @if (!string.IsNullOrEmpty(division.Description))
+                            {
+                                <p class="text-muted mb-3">@division.Description</p>
+                            }
+                            
+                            @if (division.ShowClasses.Any())
+                            {
+                                <div class="row">
+                                    @foreach (var showClass in division.ShowClasses.OrderBy(c => c.ClassNumber))
+                                    {
+                                        <div class="col-md-6 col-lg-4 mb-3">
+                                            <div class="border rounded p-3 h-100">
+                                                <h6>
+                                                    Class @showClass.ClassNumber: @showClass.Name
+                                                    @if (showClass.MaxEntries.HasValue)
+                                                    {
+                                                        <small class="text-muted">(Max: @showClass.MaxEntries)</small>
+                                                    }
+                                                </h6>
+                                                
+                                                @if (!string.IsNullOrEmpty(showClass.Description))
+                                                {
+                                                    <p class="small text-muted">@showClass.Description</p>
+                                                }
+                                                
+                                                <!-- Class specifications -->
+                                                <div class="small">
+                                                    @if (!string.IsNullOrEmpty(showClass.BreedCategory))
+                                                    {
+                                                        <div><strong>Breed:</strong> @showClass.BreedCategory</div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(showClass.FinishType))
+                                                    {
+                                                        <div><strong>Finish:</strong> @showClass.FinishType</div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(showClass.PerformanceType))
+                                                    {
+                                                        <div><strong>Performance:</strong> @showClass.PerformanceType</div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(showClass.CollectibilityType))
+                                                    {
+                                                        <div><strong>Collectible:</strong> @showClass.CollectibilityType</div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(showClass.GenderRestriction))
+                                                    {
+                                                        <div><strong>Gender:</strong> @showClass.GenderRestriction</div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(showClass.AgeRestriction))
+                                                    {
+                                                        <div><strong>Age:</strong> @showClass.AgeRestriction</div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(showClass.ColorRestriction))
+                                                    {
+                                                        <div><strong>Color:</strong> @showClass.ColorRestriction</div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(showClass.ScaleRestriction))
+                                                    {
+                                                        <div><strong>Scale:</strong> @showClass.ScaleRestriction</div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted">No classes defined for this division.</p>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No divisions have been created for this show.</p>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string ShowId { get; set; } = "";
+    
+    private ShowDto? show;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadShow();
+    }
+
+    private async Task LoadShow()
+    {
+        loading = true;
+        try
+        {
+            show = await ShowService.GetShowByIdAsync(ShowId);
+            
+            // Check if show is private and user has access
+            if (show?.IsPrivate == true)
+            {
+                // Additional access checks would go here
+                // For now, just show the show if found
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading show: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Upcoming" => "bg-info",
+            "InProgress" => "bg-warning text-dark",
+            "Completed" => "bg-success",
+            "Cancelled" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}
