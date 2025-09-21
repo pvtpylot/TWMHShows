@@ -32,8 +32,9 @@ namespace MauiBlazorWeb.Web.Services
 
         public async Task<ShowClassDto> CreateShowClassAsync(ShowClassDto showClassDto)
         {
-            if (!int.TryParse(showClassDto.ShowId, out var showId))
-                throw new ArgumentException("Invalid show ID");
+            // if (!int.TryParse(showClassDto.ShowId, out var showId))
+            //     throw new ArgumentException("Invalid show ID");
+            var showId = showClassDto.ShowId;
                 
             var showClass = new ShowClass
             {
@@ -53,9 +54,9 @@ namespace MauiBlazorWeb.Web.Services
             if (!int.TryParse(showClassDto.Id, out var classId))
                 throw new ArgumentException("Invalid class ID");
                 
-            if (!int.TryParse(showClassDto.ShowId, out var showId))
-                throw new ArgumentException("Invalid show ID");
-
+            // if (!int.TryParse(showClassDto.ShowId, out var showId))
+            //     throw new ArgumentException("Invalid show ID");
+            var showId = showClassDto.ShowId;
             var showClass = await _showClassRepository.GetByIdAsync(showClassDto.Id);
             if (showClass == null)
                 throw new KeyNotFoundException($"Show class with ID {showClassDto.Id} not found");
@@ -84,7 +85,7 @@ namespace MauiBlazorWeb.Web.Services
                 Description = showClass.Description,
                 ClassNumber = showClass.ClassNumber,
                 MaxEntries = showClass.MaxEntries,
-                ShowId = showClass.ShowId.ToString(),
+                ShowId = showClass.ShowId,
                 CreatedAt = showClass.CreatedAt,
                 UpdatedAt = showClass.UpdatedAt
             };

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace MauiBlazorWeb.Shared.Models.DTOs
@@ -14,11 +15,28 @@ namespace MauiBlazorWeb.Shared.Models.DTOs
         
         [Required]
         public int ClassNumber { get; set; }
+
+        public int? MaxEntries { get; set; } = 3;
         
-        public int? MaxEntries { get; set; }
+        public int SortOrder { get; set; } = 0;
         
-        [Required]
-        public string ShowId { get; set; } = string.Empty;
+        // Class categorization
+        public string? BreedCategory { get; set; }
+        public string? FinishType { get; set; }
+        public string? PerformanceType { get; set; }
+        public string? CollectibilityType { get; set; }
+        
+        // Additional class specifications
+        public string? GenderRestriction { get; set; }
+        public string? AgeRestriction { get; set; }
+        public string? ColorRestriction { get; set; }
+        public string? ScaleRestriction { get; set; }
+        
+        public long DivisionId { get; set; }
+        public string DivisionName { get; set; } = string.Empty;
+        
+        public int ShowId { get; set; }
+        public string ShowName { get; set; } = string.Empty;
         
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

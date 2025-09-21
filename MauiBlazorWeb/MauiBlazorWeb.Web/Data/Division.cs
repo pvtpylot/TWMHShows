@@ -11,6 +11,13 @@ public class Division : BaseEntity
     [Required]
     public string Name { get; set; } = string.Empty;
     
+    public string Description { get; set; } = string.Empty;
+    
+    [Required]
+    public DivisionType DivisionType { get; set; }
+    
+    // Display order within the show
+    public int SortOrder { get; set; } = 0;
     
     // Many-to-one relationship with Show
     public int ShowId { get; set; }
@@ -20,4 +27,13 @@ public class Division : BaseEntity
     
     // One-to-many relationship with ShowClass
     public ICollection<ShowClass> ShowClasses { get; set; } = new List<ShowClass>();
+}
+
+public enum DivisionType
+{
+    Halter,
+    Performance, 
+    Collectibility,
+    Workmanship,
+    Other
 }
