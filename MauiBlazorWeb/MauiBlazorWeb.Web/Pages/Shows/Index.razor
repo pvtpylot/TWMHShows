@@ -1,0 +1,67 @@
+@page "/shows"
+@attribute [Authorize(Roles = "User,ShowHolder,Admin")]
+@using MauiBlazorWeb.Shared.Models.DTOs
+@using Microsoft.AspNetCore.Authorization
+@inject MauiBlazorWeb.Shared.Services.IShowService ShowService
+
+<h3>Shows</h3>
+
+@if (IsLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 g-3">
+        @foreach (var s in Shows)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">@s.Name</h5>
+                        <div class="text-muted">@s.Description</div>
+                        <div class="mt-2">
+                            <span class="badge bg-primary">@s.Status</span>
+                            <span class="badge bg-info ms-1">@s.ShowType</span>
+                            <span class="badge bg-secondary ms-1">@s.ShowFormat</span>
+                        </div>
+                        <div class="mt-2 small">
+                            Dates: @s.ShowDate.ToShortDateString()
+                            @if (s.EndDate is not null) { <text>- @s.EndDate.Value.ToShortDateString()</text> }
+                        </div>
+                        @if (s.IsNanQualifying)
+                        {
+                            <div class="mt-1"><span class="badge bg-success">NAN Qualifying</span></div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        @if (Shows.Count == 0)
+        {
+            <div class="col"><div class="text-muted">No shows available.</div></div>
+        }
+    </div>
+}
+
+@code {
+    private List<ShowDto> Shows = new();
+    private bool IsLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            var all = await ShowService.GetAllShowsAsync();
+            Shows = all
+                .Where(s => !s.IsPrivate) // only public shows for the general listing
+                .OrderBy(s => s.ShowDate)
+                .ToList();
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

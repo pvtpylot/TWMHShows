@@ -1,0 +1,199 @@
+@page "/manage-shows"
+@attribute [Authorize(Roles = "ShowHolder,Admin")]
+@using MauiBlazorWeb.Shared.Models.DTOs
+@using MauiBlazorWeb.Shared.Components.Shows
+@using Microsoft.AspNetCore.Authorization
+@inject MauiBlazorWeb.Shared.Services.IShowService ShowService
+
+<h3>Manage Shows</h3>
+
+@if (IsLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="mb-3 d-flex justify-content-between">
+        <div></div>
+        <button class="btn btn-primary" @onclick="CreateNew">Create New Show</button>
+    </div>
+
+    <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Dates</th>
+                    <th>Status</th>
+                    <th>Type/Format</th>
+                    <th>Private</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Shows)
+                {
+                    <tr>
+                        <td>@s.Name</td>
+                        <td>@s.ShowDate.ToShortDateString() @if (s.EndDate is not null) {<text>- @s.EndDate.Value.ToShortDateString()</text>}</td>
+                        <td>@s.Status</td>
+                        <td>@s.ShowType / @s.ShowFormat</td>
+                        <td>@(s.IsPrivate ? "Yes" : "No")</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-secondary me-2" @onclick="() => Edit(s)">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(s)">Delete</button>
+                        </td>
+                    </tr>
+                }
+                @if (Shows.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-muted">No shows yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Editing is not null)
+    {
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>@(string.IsNullOrEmpty(Editing.Id) ? "Create Show" : $"Edit: {Editing.Name}")</strong>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+            </div>
+            <div class="card-body">
+                <ShowEditor Model="Editing" OnSave="SaveAsync" OnCancel="CancelEdit" />
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<ShowDto> Shows = new();
+    private bool IsLoading;
+    private ShowDto? Editing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            var all = await ShowService.GetAllShowsAsync();
+            Shows = all.OrderByDescending(s => s.ShowDate).ToList();
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void CreateNew()
+    {
+        Editing = new ShowDto
+        {
+            Name = "New Show",
+            ShowDate = DateTime.Today,
+            Status = "Upcoming",
+            ShowType = "LiveShow",
+            ShowFormat = "Regular",
+            MaxEntriesPerUser = 5,
+            Divisions = new()
+        };
+    }
+
+    private void Edit(ShowDto dto)
+    {
+        Editing = new ShowDto
+        {
+            Id = dto.Id,
+            Name = dto.Name,
+            Description = dto.Description,
+            ShowDate = dto.ShowDate,
+            EndDate = dto.EndDate,
+            Status = dto.Status,
+            JudgeId = dto.JudgeId,
+            JudgeName = dto.JudgeName,
+            ShowHolderId = dto.ShowHolderId,
+            ShowHolderName = dto.ShowHolderName,
+            ShowType = dto.ShowType,
+            ShowFormat = dto.ShowFormat,
+            IsPrivate = dto.IsPrivate,
+            MaxEntriesPerUser = dto.MaxEntriesPerUser,
+            AllowMemberOnlyEntries = dto.AllowMemberOnlyEntries,
+            EntryDeadline = dto.EntryDeadline,
+            JudgingDeadline = dto.JudgingDeadline,
+            ResultsPublishedAt = dto.ResultsPublishedAt,
+            IsNanQualifying = dto.IsNanQualifying,
+            NamhsaGuidelines = dto.NamhsaGuidelines,
+            Divisions = dto.Divisions.Select(d => new DivisionDto
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Description = d.Description,
+                DivisionType = d.DivisionType,
+                SortOrder = d.SortOrder,
+                ShowId = d.ShowId,
+                ShowClasses = d.ShowClasses.Select(c => new ShowClassDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description,
+                    ClassNumber = c.ClassNumber,
+                    MaxEntries = c.MaxEntries,
+                    SortOrder = c.SortOrder,
+                    BreedCategory = c.BreedCategory,
+                    FinishType = c.FinishType,
+                    PerformanceType = c.PerformanceType,
+                    CollectibilityType = c.CollectibilityType,
+                    GenderRestriction = c.GenderRestriction,
+                    AgeRestriction = c.AgeRestriction,
+                    ColorRestriction = c.ColorRestriction,
+                    ScaleRestriction = c.ScaleRestriction,
+                    DivisionId = c.DivisionId,
+                    DivisionName = c.DivisionName,
+                    ShowId = c.ShowId,
+                    ShowName = c.ShowName,
+                    CreatedAt = c.CreatedAt,
+                    UpdatedAt = c.UpdatedAt
+                }).ToList(),
+                CreatedAt = d.CreatedAt,
+                UpdatedAt = d.UpdatedAt
+            }).ToList(),
+            AdditionalMetadata = dto.AdditionalMetadata,
+            CreatedAt = dto.CreatedAt,
+            UpdatedAt = dto.UpdatedAt
+        };
+    }
+
+    private async Task SaveAsync()
+    {
+        if (Editing is null) return;
+
+        if (string.IsNullOrEmpty(Editing.Id))
+        {
+            var created = await ShowService.CreateShowAsync(Editing);
+            Shows.Insert(0, created);
+        }
+        else
+        {
+            var updated = await ShowService.UpdateShowAsync(Editing);
+            var ix = Shows.FindIndex(s => s.Id == updated.Id);
+            if (ix >= 0) Shows[ix] = updated;
+        }
+
+        Editing = null;
+        StateHasChanged();
+    }
+
+    private void CancelEdit()
+    {
+        Editing = null;
+    }
+
+    private async Task DeleteAsync(ShowDto dto)
+    {
+        if (await ShowService.DeleteShowAsync(dto.Id))
+        {
+            Shows.RemoveAll(s => s.Id == dto.Id);
+        }
+    }
+}

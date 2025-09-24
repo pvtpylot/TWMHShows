@@ -1,0 +1,233 @@
+@using MauiBlazorWeb.Shared.Models.DTOs
+
+<div class="card my-2">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <strong>@Division.Name</strong>
+            <span class="badge bg-info ms-2">@Division.DivisionType</span>
+        </div>
+        <div>
+            <button class="btn btn-sm btn-secondary me-2" @onclick="AddClass">Add Class</button>
+            <button class="btn btn-sm btn-danger" @onclick="() => OnRemoveDivision.InvokeAsync(Division)">Remove Division</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row gy-2">
+            <div class="col-md-6">
+                <label class="form-label">Name</label>
+                <input class="form-control" @bind="Division.Name" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Sort Order</label>
+                <input type="number" class="form-control" @bind="Division.SortOrder" />
+            </div>
+            <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea rows="2" class="form-control" @bind="Division.Description"></textarea>
+            </div>
+        </div>
+
+        <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th style="min-width: 12rem;">Name</th>
+                        <th>#</th>
+                        <th>Sort</th>
+                        <th>Type Specific</th>
+                        <th>Restrictions</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Division.ShowClasses.OrderBy(x => x.SortOrder).ThenBy(x => x.ClassNumber).ToList())
+                    {
+                        <tr>
+                            <td>
+                                <input class="form-control form-control-sm" @bind="c.Name" />
+                                <div class="small text-muted">@c.Description</div>
+                                <textarea class="form-control form-control-sm mt-1" rows="1" placeholder="Description (optional)" @bind="c.Description"></textarea>
+                            </td>
+                            <td style="width: 6rem;">
+                                <input type="number" class="form-control form-control-sm" @bind="c.ClassNumber" />
+                            </td>
+                            <td style="width: 6rem;">
+                                <input type="number" class="form-control form-control-sm" @bind="c.SortOrder" />
+                            </td>
+                            <td style="min-width: 18rem;">
+                                @if (IsHalter)
+                                {
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <select class="form-select form-select-sm" @bind="c.BreedCategory">
+                                                <option value="">Breed Category</option>
+                                                @foreach (var val in BreedCategories)
+                                                {
+                                                    <option value="@val">@val</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col">
+                                            <select class="form-select form-select-sm" @bind="c.FinishType">
+                                                <option value="">Finish Type</option>
+                                                @foreach (var val in FinishTypes)
+                                                {
+                                                    <option value="@val">@val</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                }
+                                else if (IsPerformance)
+                                {
+                                    <select class="form-select form-select-sm" @bind="c.PerformanceType">
+                                        <option value="">Performance Type</option>
+                                        @foreach (var val in PerformanceTypes)
+                                        {
+                                            <option value="@val">@val</option>
+                                        }
+                                    </select>
+                                }
+                                else if (IsCollectibility)
+                                {
+                                    <select class="form-select form-select-sm" @bind="c.CollectibilityType">
+                                        <option value="">Collectibility Type</option>
+                                        @foreach (var val in CollectibilityTypes)
+                                        {
+                                            <option value="@val">@val</option>
+                                        }
+                                    </select>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">No type-specific fields</span>
+                                }
+                            </td>
+                            <td style="min-width: 22rem;">
+                                <div class="row g-1">
+                                    <div class="col">
+                                        <select class="form-select form-select-sm" @bind="c.GenderRestriction">
+                                            <option value="">Gender</option>
+                                            @foreach (var val in Genders)
+                                            {
+                                                <option value="@val">@val</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col">
+                                        <select class="form-select form-select-sm" @bind="c.AgeRestriction">
+                                            <option value="">Age</option>
+                                            @foreach (var val in AgeCategories)
+                                            {
+                                                <option value="@val">@val</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col">
+                                        <select class="form-select form-select-sm" @bind="c.ColorRestriction">
+                                            <option value="">Color</option>
+                                            @foreach (var val in ColorRestrictions)
+                                            {
+                                                <option value="@val">@val</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col">
+                                        <select class="form-select form-select-sm" @bind="c.ScaleRestriction">
+                                            <option value="">Scale</option>
+                                            @foreach (var val in ScaleCategories)
+                                            {
+                                                <option value="@val">@val</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end" style="width: 6rem;">
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveClass(c)">Remove</button>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Division.ShowClasses.Any())
+                    {
+                        <tr><td colspan="6" class="text-muted small">No classes. Use "Add Class" to get started.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public DivisionDto Division { get; set; } = default!;
+    [Parameter] public EventCallback<DivisionDto> OnRemoveDivision { get; set; }
+
+    private bool IsHalter => Division.DivisionType.Equals("Halter", StringComparison.OrdinalIgnoreCase);
+    private bool IsPerformance => Division.DivisionType.Equals("Performance", StringComparison.OrdinalIgnoreCase);
+    private bool IsCollectibility => Division.DivisionType.Equals("Collectibility", StringComparison.OrdinalIgnoreCase);
+
+    // Option lists (DTO uses strings, so we provide string options here)
+    private static readonly string[] BreedCategories = new[]
+    {
+        "Sport","Light","Draft","Pony","Stock","Other"
+    };
+
+    private static readonly string[] FinishTypes = new[]
+    {
+        "OF","CM","AR"
+    };
+
+    private static readonly string[] PerformanceTypes = new[]
+    {
+        "HunterJumper","Dressage","EnglishPleasure","EnglishTrail",
+        "Reining","WesternPleasure","BarrelRacing","WesternTrail",
+        "Costume","Parade","Harness","SceneSetup"
+    };
+
+    private static readonly string[] CollectibilityTypes = new[]
+    {
+        "Brand","Mold","ReleaseYear","Rarity","Condition"
+    };
+
+    private static readonly string[] Genders = new[]
+    {
+        "Stallion","Mare","Gelding"
+    };
+
+    private static readonly string[] AgeCategories = new[]
+    {
+        "Foal","Adult"
+    };
+
+    private static readonly string[] ColorRestrictions = new[]
+    {
+        "Bay","Chestnut","Black","Gray","Pinto","Appaloosa","Dun","Palomino","Other"
+    };
+
+    private static readonly string[] ScaleCategories = new[]
+    {
+        "Traditional","Classic","Stablemate","Micro","Other"
+    };
+
+    private void AddClass()
+    {
+        var nextOrder = Division.ShowClasses.Count > 0 ? Division.ShowClasses.Max(c => c.SortOrder) + 1 : 1;
+        Division.ShowClasses.Add(new ShowClassDto
+        {
+            Id = string.Empty,
+            Name = "New Class",
+            Description = string.Empty,
+            ClassNumber = Division.ShowClasses.Count + 1,
+            SortOrder = nextOrder,
+            DivisionId = long.TryParse(Division.Id, out var did) ? did : 0,
+            DivisionName = Division.Name,
+            ShowId = Division.ShowId,
+            ShowName = string.Empty
+        });
+    }
+
+    private void RemoveClass(ShowClassDto cls)
+    {
+        Division.ShowClasses.Remove(cls);
+    }
+}

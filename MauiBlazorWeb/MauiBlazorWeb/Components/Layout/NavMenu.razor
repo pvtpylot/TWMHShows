@@ -34,25 +34,14 @@
                     </NavLink>
                 </div>
                 
-                <!-- Shows menu for users -->
-                <AuthorizeView Roles="User,TrialUser,Admin">
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="shows">
-                            <span class="oi oi-calendar" aria-hidden="true"></span> Shows
-                        </NavLink>
-                    </div>
-                </AuthorizeView>
-                
-                <!-- Show management for ShowHolders -->
                 <AuthorizeView Roles="ShowHolder,Admin">
                     <div class="nav-item px-3">
                         <NavLink class="nav-link" href="manage-shows">
-                            <span class="oi oi-briefcase" aria-hidden="true"></span> Manage Shows
+                            <span class="oi oi-calendar" aria-hidden="true"></span> Manage Shows
                         </NavLink>
                     </div>
                 </AuthorizeView>
                 
-                <!-- Admin menu items -->
                 <AuthorizeView Roles="Admin">
                     <div class="nav-item px-3">
                         <NavLink class="nav-link" href="user-management">
