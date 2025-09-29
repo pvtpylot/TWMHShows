@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MauiBlazorWeb.Shared\MauiBlazorWeb.Shared.csproj" />
+    <ProjectReference Include="..\MauiBlazorWeb.Shared.Contracts\MauiBlazorWeb.Shared.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

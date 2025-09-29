@@ -1,10 +1,13 @@
 using System.Text.Json.Serialization;
+using System;
+using MauiBlazorWeb.Shared.Contracts.Auth.V1;
 
 namespace MauiBlazorWeb.Models
 {
     /// <summary>
-    /// This class is used to store the token information received from the server.
+    /// (Deprecated) Use MauiBlazorWeb.Shared.Contracts.Auth.V1.LoginResponse instead.
     /// </summary>
+    [Obsolete("Use MauiBlazorWeb.Shared.Contracts.Auth.V1.LoginResponse instead")]
     public class LoginResponse
     {
         [JsonPropertyName("tokenType")]
@@ -24,5 +27,17 @@ namespace MauiBlazorWeb.Models
 
         [JsonPropertyName("roles")]
         public string[]? Roles { get; set; }
+
+        public MauiBlazorWeb.Shared.Contracts.Auth.V1.LoginResponse ToContract() => new(TokenType, AccessToken, ExpiresIn, RefreshToken, UserId, Roles);
+
+        public static LoginResponse FromContract(MauiBlazorWeb.Shared.Contracts.Auth.V1.LoginResponse c) => new()
+        {
+            TokenType = c.TokenType,
+            AccessToken = c.AccessToken,
+            ExpiresIn = c.ExpiresIn,
+            RefreshToken = c.RefreshToken,
+            UserId = c.UserId,
+            Roles = c.Roles
+        };
     }
 }
