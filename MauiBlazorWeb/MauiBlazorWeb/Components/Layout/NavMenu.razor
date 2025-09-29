@@ -21,7 +21,7 @@
                     </NavLink>
                 </div>
             </NotAuthorized>
-            <Authorized>
+            <Authorized Context="outerAuthState">
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                         <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span>Home
@@ -34,20 +34,25 @@
                     </NavLink>
                 </div>
                 
-                <AuthorizeView Roles="ShowHolder,Admin">
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="manage-shows">
-                            <span class="oi oi-calendar" aria-hidden="true"></span> Manage Shows
-                        </NavLink>
-                    </div>
+                <!-- Specify a unique context name to avoid collision with outer AuthorizeView -->
+                <AuthorizeView Roles="ShowHolder,Admin" Context="showHolderAuthState">
+                    <Authorized Context="showHolderAuthorizedState">
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="manage-shows">
+                                <span class="oi oi-calendar" aria-hidden="true"></span> Manage Shows
+                            </NavLink>
+                        </div>
+                    </Authorized>
                 </AuthorizeView>
                 
-                <AuthorizeView Roles="Admin">
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="user-management">
-                            <span class="oi oi-people" aria-hidden="true"></span> User Management
-                        </NavLink>
-                    </div>
+                <AuthorizeView Roles="Admin" Context="adminAuthState">
+                    <Authorized Context="adminAuthorizedState">
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="user-management">
+                                <span class="oi oi-people" aria-hidden="true"></span> User Management
+                            </NavLink>
+                        </div>
+                    </Authorized>
                 </AuthorizeView>
                 
                 <div class="nav-item px-3">
