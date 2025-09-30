@@ -25,13 +25,16 @@
 }
 
 .bi {
-    display: inline-block;
+    display: inline-flex; /* changed from inline-block for vertical centering */
+    align-items: center;  /* center background image area */
+    justify-content: center;
     position: relative;
     width: 1.25rem;
     height: 1.25rem;
     margin-right: 0.75rem;
-    top: -1px;
+    top: 0; /* removed previous -1px offset */
     background-size: cover;
+    vertical-align: middle; /* helps in some browsers */
 }
 
 .bi-house-door-fill-nav-menu {
@@ -86,7 +89,7 @@
         border-radius: 4px;
         height: 3rem;
         display: flex;
-        align-items: center;
+        align-items: center; /* ensure flex centering */
         line-height: 3rem;
         width: 100%;
     }
