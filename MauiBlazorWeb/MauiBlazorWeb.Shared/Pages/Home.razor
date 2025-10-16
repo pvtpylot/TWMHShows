@@ -1,4 +1,3 @@
-
 @page "/"
 @using MauiBlazorWeb.Shared.Services
 @using Microsoft.AspNetCore.Components.Authorization
@@ -69,8 +68,8 @@
                             participate in weekly shows, and connect with fellow collectors from around the world.
                         </p>
                         <div class="hero-actions">
-                            <a href="Account/Register" class="btn btn-primary btn-lg me-3">Get Started Free</a>
-                            <a href="Account/Login" class="btn btn-outline-primary btn-lg">Sign In</a>
+                            <a href="@RegisterUrl" class="btn btn-primary btn-lg me-3">Get Started Free</a>
+                            <a href="@LoginUrl" class="btn btn-outline-primary btn-lg">Sign In</a>
                         </div>
                     </div>
                     <div class="col-lg-6 text-center">
@@ -445,6 +444,10 @@
         get => first_name;
         set => first_name = value;
     }
+
+    // Pick the correct login/register routes for Web vs MAUI
+    private string LoginUrl => (FormFactor.GetFormFactor() == "Web") ? "Account/Login" : "login";
+    private string RegisterUrl => (FormFactor.GetFormFactor() == "Web") ? "Account/Register" : "login";
 
     protected override async Task OnInitializedAsync()
     {
