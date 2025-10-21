@@ -169,7 +169,7 @@ namespace MauiBlazorWeb.Services
 
         private async Task EnsureAuthHeaderAsync()
         {
-            // If already set, verify token hasn’t expired
+            // If already set, verify token hasn't expired
             var existing = _httpClient.DefaultRequestHeaders.Authorization?.Parameter;
             if (!string.IsNullOrEmpty(existing) && IsJwtExpired(existing))
             {
