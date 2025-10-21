@@ -3,7 +3,8 @@
 @inject MauiAuthenticationStateProvider AuthStateProvider
 @using MauiBlazorWeb.Services
 @using MauiBlazorWeb.Models
-
+@using MauiBlazorWeb.Shared.Services
+@inject IAuthService Auth
 <h3>Login to Access Application</h3>
 
 <EditForm Model="LoginModel" OnValidSubmit="LoginUser" FormName="login">
@@ -45,6 +46,13 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var isAuth = await Auth.IsAuthenticatedAsync(); // now checks expiry too
+        if (isAuth)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
         if (AuthStateProvider.LoginStatus == LoginStatus.Failed)
         {
             loginFailureHidden = false;

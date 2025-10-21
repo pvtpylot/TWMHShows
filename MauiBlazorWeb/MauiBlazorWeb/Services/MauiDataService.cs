@@ -28,16 +28,26 @@ namespace MauiBlazorWeb.Services
         public async Task<IEnumerable<UserModelObjectDto>> GetAllUserModelObjectsAsync(string? applicationUserId)
         {
             if (string.IsNullOrEmpty(applicationUserId))
+            {
+                Debug.WriteLine("[MauiDataService] GetAllUserModelObjectsAsync: applicationUserId is null or empty");
                 return new List<UserModelObjectDto>();
+            }
             
             return await ExecuteApiRequestAsync(
                 async (client) => 
                 {
-                    Debug.WriteLine($"Making API request to: /api/userModelObjects?applicationUserId={applicationUserId}");
-                    var result = await client.GetFromJsonAsync<IEnumerable<UserModelObjectDto>>(
-                        $"api/userModelObjects?applicationUserId={applicationUserId}", _jsonOptions);
+                    // Note: The API endpoint gets userId from JWT claims, not from query params
+                    // The applicationUserId parameter is just for client-side validation
+                    var response = await client.GetAsync("api/userModelObjects");
+                    var responseContent = await response.Content.ReadAsStringAsync();
                     
-                    Debug.WriteLine($"API request successful, found {result?.Count() ?? 0} items");
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Debug.WriteLine($"[MauiDataService] Error response: {response.StatusCode}");
+                        return new List<UserModelObjectDto>();
+                    }
+                    
+                    var result = JsonSerializer.Deserialize<IEnumerable<UserModelObjectDto>>(responseContent, _jsonOptions);
                     return result ?? new List<UserModelObjectDto>();
                 },
                 new List<UserModelObjectDto>(),
@@ -49,11 +59,9 @@ namespace MauiBlazorWeb.Services
             return await ExecuteApiRequestAsync(
                 async (client) => 
                 {
-                    Debug.WriteLine($"Making API request to: /api/userModelObjects/{id}");
                     var result = await client.GetFromJsonAsync<UserModelObjectDto>(
                         $"api/userModelObjects/{id}", _jsonOptions);
                     
-                    Debug.WriteLine("API request successful");
                     return result ?? new UserModelObjectDto();
                 },
                 new UserModelObjectDto(),
@@ -65,22 +73,16 @@ namespace MauiBlazorWeb.Services
             return await ExecuteApiRequestAsync(
                 async (client) => 
                 {
-                    Debug.WriteLine("Making POST request to: /api/userModelObjects");
-                    Debug.WriteLine($"Request payload: {JsonSerializer.Serialize(userModelObjectDto, _jsonOptions)}");
-                    
                     var response = await client.PostAsJsonAsync("api/userModelObjects", userModelObjectDto);
-                    
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    Debug.WriteLine($"Response status code: {(int)response.StatusCode} {response.StatusCode}");
-                    Debug.WriteLine($"Response content: {responseContent}");
                     
                     if (response.IsSuccessStatusCode)
                     {
+                        var responseContent = await response.Content.ReadAsStringAsync();
                         return JsonSerializer.Deserialize<UserModelObjectDto>(responseContent, _jsonOptions) ?? 
                                new UserModelObjectDto();
                     }
                     
-                    Debug.WriteLine($"Error creating model object: {responseContent}");
+                    Debug.WriteLine($"[MauiDataService] Error creating model object: {response.StatusCode}");
                     return new UserModelObjectDto();
                 },
                 new UserModelObjectDto(),
@@ -92,22 +94,16 @@ namespace MauiBlazorWeb.Services
             return await ExecuteApiRequestAsync(
                 async (client) => 
                 {
-                    Debug.WriteLine($"Making PUT request to: /api/userModelObjects/{id}");
-                    Debug.WriteLine($"Request payload: {JsonSerializer.Serialize(userModelObjectDto, _jsonOptions)}");
-                    
                     var response = await client.PutAsJsonAsync($"api/userModelObjects/{id}", userModelObjectDto);
-                    
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    Debug.WriteLine($"Response status code: {(int)response.StatusCode} {response.StatusCode}");
-                    Debug.WriteLine($"Response content: {responseContent}");
                     
                     if (response.IsSuccessStatusCode)
                     {
+                        var responseContent = await response.Content.ReadAsStringAsync();
                         return JsonSerializer.Deserialize<UserModelObjectDto>(responseContent, _jsonOptions) ?? 
                                new UserModelObjectDto();
                     }
                     
-                    Debug.WriteLine($"Error updating model object: {responseContent}");
+                    Debug.WriteLine($"[MauiDataService] Error updating model object: {response.StatusCode}");
                     return new UserModelObjectDto();
                 },
                 new UserModelObjectDto(),
@@ -119,11 +115,7 @@ namespace MauiBlazorWeb.Services
             return await ExecuteApiRequestAsync(
                 async (client) => 
                 {
-                    Debug.WriteLine($"Making DELETE request to: /api/userModelObjects/{id}");
-                    
                     var response = await client.DeleteAsync($"api/userModelObjects/{id}");
-                    
-                    Debug.WriteLine($"Response status code: {(int)response.StatusCode} {response.StatusCode}");
                     return response.IsSuccessStatusCode;
                 },
                 false,

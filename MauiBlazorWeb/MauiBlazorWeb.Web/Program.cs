@@ -6,6 +6,7 @@ using MauiBlazorWeb.Web.Data;
 using MauiBlazorWeb.Web.Data.Repositories;
 using MauiBlazorWeb.Web.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,9 @@ using System.Security.Claims;
 using MauiBlazorWeb.Web.Services.Mappers;
 using MauiBlazorWeb.Shared.Models;
 using System.Diagnostics; // Added
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,12 +41,56 @@ builder.Services.AddIdentityCore<ApplicationUser>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-// Add Auth services used by the Web app
-builder.Services.AddAuthentication(options =>
-{
-    // Ensure that unauthenticated clients redirect to the login page rather than receive a 401 by default.
-    options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
-});
+// Authentication: support both cookie (web) and JWT bearer (MAUI)
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var jwtKey = jwtSection["Key"] ?? "dev_secret_key_change_me";
+var jwtIssuer = jwtSection["Issuer"] ?? "MauiBlazorWeb";
+var jwtAudience = jwtSection["Audience"] ?? "MauiBlazorWebClients";
+
+builder.Services
+    .AddAuthentication(options =>
+    {
+        // Use a policy scheme that selects between JWT and Cookie based on the request
+        options.DefaultAuthenticateScheme = "JwtOrCookie";
+        options.DefaultChallengeScheme = "JwtOrCookie";
+    })
+    .AddPolicyScheme("JwtOrCookie", "JWT or Cookie", options =>
+    {
+        options.ForwardDefaultSelector = context =>
+        {
+            // If Authorization header is present, use JWT, else use Identity cookie
+            return context.Request.Headers.ContainsKey("Authorization")
+                ? JwtBearerDefaults.AuthenticationScheme
+                : IdentityConstants.ApplicationScheme;
+        };
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.FromMinutes(2)
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = ctx =>
+            {
+                Console.WriteLine($"JWT auth failed: {ctx.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnChallenge = ctx =>
+            {
+                Console.WriteLine($"JWT challenge: {ctx.Error} - {ctx.ErrorDescription}");
+                return Task.CompletedTask;
+            }
+        };
+    });
+    // NOTE: Do not add .AddIdentityCookies() here to avoid duplicate scheme registration.
 
 // Add this near the top of your Program.cs after other service registrations
 builder.Services.AddCors(options =>
@@ -158,16 +206,18 @@ app.MapGet("/api/weather", async (IWeatherService weatherService) =>
     return Results.Ok(forecasts);
 }).RequireAuthorization();
 
-app.MapGet("/api/userModelObjects", async (IDataService dataService, string applicationUserId) =>
+// Updated: derive userId from the authenticated user instead of trusting a query param
+app.MapGet("/api/userModelObjects", async (IDataService dataService, ClaimsPrincipal user) =>
 {
-    if (string.IsNullOrEmpty(applicationUserId))
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId))
     {
-        return Results.BadRequest("The 'applicationUserId' parameter is required.");
+        return Results.Unauthorized();
     }
-    // Your existing logic here
-    return Results.Ok(await dataService.GetAllUserModelObjectsAsync(applicationUserId));
+    
+    var results = await dataService.GetAllUserModelObjectsAsync(userId);
+    return Results.Ok(results);
 }).RequireAuthorization();
-
 
 app.MapGet("/api/userModelObjects/{id}", async (IDataService dataService, string id) =>
 {
@@ -195,12 +245,6 @@ app.MapGet("/api/shows/{id}", async (string id, IShowService showService) =>
 app.MapGet("/api/shows/judge/{judgeId}", async (string judgeId, IShowService showService) =>
 {
     return Results.Ok(await showService.GetShowsByJudgeIdAsync(judgeId));
-}).RequireAuthorization();
-
-app.MapPost("/api/shows", async (ShowDto showDto, IShowService showService) =>
-{
-    var result = await showService.CreateShowAsync(showDto);
-    return Results.Created($"/api/shows/{result.Id}", result);
 }).RequireAuthorization();
 
 app.MapPut("/api/shows/{id}", async (string id, ShowDto showDto, IShowService showService) =>
@@ -246,19 +290,44 @@ app.MapPost("/identity/mobilelogin", async (HttpContext context, UserManager<App
         {
             // Find the user
             var user = await userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return Results.Unauthorized();
+            }
             
             // Get user roles
             var roles = await userManager.GetRolesAsync(user);
             
-            // Generate tokens
+            // Generate JWT access token
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.UserName ?? email),
+                new Claim(ClaimTypes.Email, user.Email ?? email)
+            };
+
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var expires = DateTime.UtcNow.AddHours(1);
+
+            var token = new JwtSecurityToken(
+                issuer: jwtIssuer,
+                audience: jwtAudience,
+                claims: claims,
+                expires: expires,
+                signingCredentials: creds);
+
+            var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
+            
+            // Generate a simple refresh token (persisting and rotation left as an exercise)
             var refreshToken = Guid.NewGuid().ToString();
-            var accessToken = await userManager.GenerateUserTokenAsync(user, "Default", "APIAccessToken");
             
-            // Store refresh token in user claims or userstore
-            var refreshClaim = new Claim("RefreshToken", refreshToken);
-            await userManager.AddClaimAsync(user, refreshClaim);
-            
-            // Create response with roles
             var response = new
             {
                 tokenType = "Bearer",
