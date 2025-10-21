@@ -24,7 +24,7 @@ namespace MauiBlazorWeb.Services
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                // Clear invalid/expired credentials to avoid “sticky” auth state
+                // Clear invalid/expired credentials to avoid "sticky" auth state
                 SecureStorage.Default.Remove("access_token");
                 SecureStorage.Default.Remove("user_id");
                 SecureStorage.Default.Remove("user_roles");
