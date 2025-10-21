@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace MauiBlazorWeb.Services
             var accessTokenInfo = await _authStateProvider.GetAccessTokenInfoAsync();
             if (accessTokenInfo == null)
             {
+                Debug.WriteLine("[HttpClientFactory] No access token info available");
                 throw new UnauthorizedAccessException("User is not authenticated. Please log in.");
             }
 
@@ -39,8 +41,12 @@ namespace MauiBlazorWeb.Services
         public HttpClient CreateClient()
         {
             // Use the HttpClientHelper to get a properly configured HttpClient
-            // or return a clone of the injected client
-            return HttpClientHelper.GetHttpClient();
+            var client = HttpClientHelper.GetHttpClient();
+            
+            // Set the BaseAddress from HttpClientHelper
+            client.BaseAddress = new Uri(HttpClientHelper.BaseUrl);
+            
+            return client;
         }
     }
 }

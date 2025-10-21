@@ -214,7 +214,9 @@ app.MapGet("/api/userModelObjects", async (IDataService dataService, ClaimsPrinc
     {
         return Results.Unauthorized();
     }
-    return Results.Ok(await dataService.GetAllUserModelObjectsAsync(userId));
+    
+    var results = await dataService.GetAllUserModelObjectsAsync(userId);
+    return Results.Ok(results);
 }).RequireAuthorization();
 
 app.MapGet("/api/userModelObjects/{id}", async (IDataService dataService, string id) =>

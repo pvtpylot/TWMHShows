@@ -66,6 +66,12 @@ namespace MauiBlazorWeb
             // Missing registrations for MauiDataService dependencies
             builder.Services.AddScoped<IErrorHandler, DefaultErrorHandler>();
 
+            // Register HttpClient for injection into HttpClientFactory
+            builder.Services.AddSingleton<HttpClient>(sp => HttpClientHelper.GetHttpClient());
+
+            // Register custom HttpClientFactory (required by MauiDataService)
+            builder.Services.AddScoped<MauiBlazorWeb.Services.IHttpClientFactory, HttpClientFactory>();
+
             // Data services
             builder.Services.AddScoped<IDataService, MauiDataService>();
             builder.Services.AddScoped<IShowService, MauiShowService>();
