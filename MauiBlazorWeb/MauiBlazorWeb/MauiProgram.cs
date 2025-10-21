@@ -3,6 +3,9 @@ using MauiBlazorWeb.Shared.Models;
 using MauiBlazorWeb.Shared.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Devices;
+using Microsoft.Extensions.DependencyInjection; // REQUIRED for AddHttpClient
+using Microsoft.Maui.Hosting;
 
 namespace MauiBlazorWeb
 {
@@ -61,27 +64,7 @@ namespace MauiBlazorWeb
             builder.Services.AddScoped<IRoleService, MauiRoleService>();
 
             // Missing registrations for MauiDataService dependencies
-            builder.Services.AddScoped<IHttpClientFactory, HttpClientFactory>();
             builder.Services.AddScoped<IErrorHandler, DefaultErrorHandler>();
-
-#if ANDROID
-            builder.Services.AddSingleton(sp => 
-            {
-                var handler = sp.GetRequiredService<AndroidHttpMessageHandler>();
-                var httpClient = new HttpClient(handler)
-                {
-                    BaseAddress = new Uri(HttpClientHelper.BaseUrl),
-                    Timeout = TimeSpan.FromSeconds(30)
-                };
-                return httpClient;
-            });
-#else
-            builder.Services.AddSingleton(_ => new HttpClient
-            {
-                BaseAddress = new Uri(HttpClientHelper.BaseUrl),
-                Timeout = TimeSpan.FromSeconds(30)
-            });
-#endif
 
             // Data services
             builder.Services.AddScoped<IDataService, MauiDataService>();
@@ -89,6 +72,18 @@ namespace MauiBlazorWeb
             builder.Services.AddScoped<IShowClassService, MauiShowClassService>();
             builder.Services.AddScoped<IEntryService, MauiEntryService>();
             builder.Services.AddScoped<IResultService, MauiResultService>();
+
+            builder.Services.AddScoped<AuthHeaderHandler>();
+
+            builder.Services.AddHttpClient("ApiClient", client =>
+            {
+#if ANDROID
+                client.BaseAddress = new Uri("https://10.0.2.2:7157");
+#else
+                client.BaseAddress = new Uri("https://localhost:7157");
+#endif
+            })
+            .AddHttpMessageHandler<AuthHeaderHandler>();
 
             return builder.Build();
         }
