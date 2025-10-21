@@ -28,7 +28,7 @@ namespace MauiBlazorWeb.Services
                 SecureStorage.Default.Remove("access_token");
                 SecureStorage.Default.Remove("user_id");
                 SecureStorage.Default.Remove("user_roles");
-                try { await _auth.Logout(); } catch { /* best effort */ }
+                try { await _auth.Logout(); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Logout failed: {ex}"); /* best effort */ }
             }
 
             return response;
