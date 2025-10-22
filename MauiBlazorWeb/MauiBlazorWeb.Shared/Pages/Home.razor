@@ -1,4 +1,4 @@
-    @page "/"
+@page "/"
 @using MauiBlazorWeb.Shared.Services
 @using Microsoft.AspNetCore.Components.Authorization
 @inject IFormFactor FormFactor
@@ -12,9 +12,10 @@
         <div class="welcome-section">
             <div class="welcome-header">
                 <h1 class="display-4 mb-2">Welcome back, @FirstName!</h1>
-                <p class="lead text-muted">You're logged into Tradewinds Model Horse Show as <strong>@context.User.Identity.Name</strong></p>
+                <p class="lead text-muted">You're logged into Tradewinds Model Horse Show as
+                    <strong>@context.User.Identity.Name</strong></p>
             </div>
-            
+
             <div class="container-fluid py-5">
                 <div class="row justify-content-center">
                     <div class="col-lg-8">
@@ -23,7 +24,7 @@
                                 <img src="/img/tradewinds_logo.png" class="main-logo" alt="Tradewinds logo">
                             </div>
                         </div>
-                        
+
                         <div class="quick-actions">
                             <div class="row g-4">
                                 <div class="col-md-6">
@@ -55,7 +56,7 @@
             </div>
         </div>
     </Authorized>
-    
+
     <NotAuthorized>
         <div class="hero-section">
             <div class="container">
@@ -64,7 +65,7 @@
                         <h1 class="hero-title">Welcome to Tradewinds</h1>
                         <h2 class="hero-subtitle">Model Horse Show Community</h2>
                         <p class="hero-description">
-                            Join our thriving community of model horse enthusiasts. Create your stable, 
+                            Join our thriving community of model horse enthusiasts. Create your stable,
                             participate in weekly shows, and connect with fellow collectors from around the world.
                         </p>
                         <div class="hero-actions">
@@ -89,7 +90,7 @@
                         <p class="section-subtitle">Professional tools for serious collectors</p>
                     </div>
                 </div>
-                
+
                 <div class="row g-4">
                     <div class="col-lg-4 col-md-6">
                         <div class="feature-card">
@@ -99,14 +100,14 @@
                             <div class="feature-content">
                                 <h5 class="feature-title">Create Your Stable</h5>
                                 <p class="feature-description">
-                                    Upload your own photos and organize your stable however works best for you. 
+                                    Upload your own photos and organize your stable however works best for you.
                                     Professional photo management tools included.
                                 </p>
                                 <a href="pricing" class="feature-link">Start Free Trial</a>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4 col-md-6">
                         <div class="feature-card">
                             <div class="feature-icon">
@@ -115,14 +116,14 @@
                             <div class="feature-content">
                                 <h5 class="feature-title">Weekly Shows</h5>
                                 <p class="feature-description">
-                                    Participate in weekly shows featuring judges known and respected 
+                                    Participate in weekly shows featuring judges known and respected
                                     throughout the model horse hobby community.
                                 </p>
                                 <a href="showtypes" class="feature-link">Learn More</a>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4 col-md-6">
                         <div class="feature-card">
                             <div class="feature-icon">
@@ -131,14 +132,14 @@
                             <div class="feature-content">
                                 <h5 class="feature-title">New to the Hobby?</h5>
                                 <p class="feature-description">
-                                    Tutorial shows, live learning sessions, articles and videos from 
+                                    Tutorial shows, live learning sessions, articles and videos from
                                     hobby experts to help you get started.
                                 </p>
                                 <a href="showtypes#tutorial" class="feature-link">Get Started</a>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4 col-md-6">
                         <div class="feature-card">
                             <div class="feature-icon">
@@ -147,14 +148,14 @@
                             <div class="feature-content">
                                 <h5 class="feature-title">Expert Feedback</h5>
                                 <p class="feature-description">
-                                    Get personalized evaluations from our judges with recommendations 
+                                    Get personalized evaluations from our judges with recommendations
                                     for photo and class decisions.
                                 </p>
                                 <a href="review" class="feature-link">Try Free</a>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4 col-md-6">
                         <div class="feature-card">
                             <div class="feature-icon">
@@ -163,14 +164,14 @@
                             <div class="feature-content">
                                 <h5 class="feature-title">Unlimited Storage</h5>
                                 <p class="feature-description">
-                                    Store unlimited photos of your models and create show strings 
+                                    Store unlimited photos of your models and create show strings
                                     with specific pics for different scenarios.
                                 </p>
                                 <a href="stableorg" class="feature-link">Learn More</a>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4 col-md-6">
                         <div class="feature-card">
                             <div class="feature-icon">
@@ -179,7 +180,7 @@
                             <div class="feature-content">
                                 <h5 class="feature-title">Reference Library</h5>
                                 <p class="feature-description">
-                                    Access our searchable reference library with links to model 
+                                    Access our searchable reference library with links to model
                                     resources and expert articles.
                                 </p>
                                 <a href="refinfo" class="feature-link">Explore</a>
@@ -407,20 +408,20 @@
         .hero-title {
             font-size: 2.5rem;
         }
-        
+
         .hero-subtitle {
             font-size: 1.2rem;
         }
-        
+
         .section-title {
             font-size: 2rem;
         }
-        
+
         .hero-actions .btn {
             margin-bottom: 1rem;
             width: 100%;
         }
-        
+
         .hero-actions .btn:last-child {
             margin-bottom: 0;
         }
@@ -437,17 +438,11 @@
     private string factor => FormFactor.GetFormFactor();
     private string platform => FormFactor.GetPlatform();
 
-    private string first_name = "First_Name";
-
-    public string FirstName
-    {
-        get => first_name;
-        set => first_name = value;
-    }
+    public string FirstName { get; set; } = "First_Name";
 
     // Pick the correct login/register routes for Web vs MAUI
-    private string LoginUrl => (FormFactor.GetFormFactor() == "Web") ? "Account/Login" : "login";
-    private string RegisterUrl => (FormFactor.GetFormFactor() == "Web") ? "Account/Register" : "login";
+    private string LoginUrl => FormFactor.GetFormFactor() == "Web" ? "Account/Login" : "login";
+    private string RegisterUrl => FormFactor.GetFormFactor() == "Web" ? "Account/Register" : "login";
 
     protected override async Task OnInitializedAsync()
     {
@@ -467,4 +462,5 @@
 
         return "First_Name";
     }
+
 }

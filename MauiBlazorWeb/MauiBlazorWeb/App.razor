@@ -1,15 +1,15 @@
-@using Microsoft.AspNetCore.Components
-@using Microsoft.AspNetCore.Components.Routing
-@using Microsoft.AspNetCore.Components.Authorization
-@using MauiBlazorWeb.Components.Layout
 @using System.Reflection
+@using MauiBlazorWeb.Components.Layout
+@using MauiBlazorWeb.Shared
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
 @namespace MauiBlazorWeb.Blazor
 
 <Router AppAssembly="@typeof(App).Assembly"
         AdditionalAssemblies="ExtraAssemblies">
     <Found Context="routeData">
         <CascadingAuthenticationState>
-            <RouteView RouteData="@routeData" DefaultLayout="typeof(MainLayout)" />
+            <RouteView RouteData="@routeData" DefaultLayout="typeof(MainLayout)"/>
         </CascadingAuthenticationState>
     </Found>
     <NotFound>
@@ -20,8 +20,10 @@
 </Router>
 
 @code {
+
     private static readonly Assembly[] ExtraAssemblies = new[]
     {
-        typeof(MauiBlazorWeb.Shared._Imports).Assembly
+        typeof(_Imports).Assembly
     };
+
 }

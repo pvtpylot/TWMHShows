@@ -1,11 +1,10 @@
 ﻿@inherits LayoutComponentBase
-@using MauiBlazorWeb.Services
 @inject MauiAuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
 
 <div class="page">
     <div class="sidebar">
-        <MauiBlazorWeb.Components.Layout.NavMenu />
+        <MauiBlazorWeb.Components.Layout.NavMenu/>
     </div>
 
     <main>
@@ -28,9 +27,11 @@
 </div>
 
 @code {
+
     protected override async Task OnInitializedAsync()
     {
         // Force authentication state provider to check token on startup
         await AuthStateProvider.GetAuthenticationStateAsync();
     }
+
 }

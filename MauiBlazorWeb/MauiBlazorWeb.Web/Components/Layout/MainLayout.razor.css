@@ -34,41 +34,41 @@ main {
     z-index: 1000;
 }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        white-space: nowrap;
-        margin-left: 2rem;
-        text-decoration: none;
-        color: #2c3e50;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        position: relative;
-    }
+.top-row ::deep a, .top-row ::deep .btn-link {
+    white-space: nowrap;
+    margin-left: 2rem;
+    text-decoration: none;
+    color: #2c3e50;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+}
 
-    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-        color: #3498db;
-        text-decoration: none;
-        transform: translateY(-1px);
-    }
+.top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
+    color: #3498db;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
 
-    .top-row ::deep a:hover::after {
-        width: 100%;
-    }
+.top-row ::deep a:hover::after {
+    width: 100%;
+}
 
-    .top-row ::deep a::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        width: 0;
-        height: 2px;
-        background: linear-gradient(90deg, #3498db, #9b59b6);
-        transition: width 0.3s ease;
-    }
+.top-row ::deep a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #3498db, #9b59b6);
+    transition: width 0.3s ease;
+}
 
-    .top-row ::deep a:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+.top-row ::deep a:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 @media (max-width: 640.98px) {
     .top-row {
@@ -138,25 +138,25 @@ article.content {
     font-weight: 500;
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 1.2rem;
-        padding: 0.5rem;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        width: 2rem;
-        height: 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-    }
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
 
-    #blazor-error-ui .dismiss:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: translateY(-50%) scale(1.1);
-    }
+#blazor-error-ui .dismiss:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-50%) scale(1.1);
+}

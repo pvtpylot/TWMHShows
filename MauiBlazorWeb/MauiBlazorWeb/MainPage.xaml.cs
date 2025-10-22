@@ -1,13 +1,10 @@
-using Microsoft.Maui.Controls;
-using Microsoft.Maui.Platform;
+namespace MauiBlazorWeb;
 
-namespace MauiBlazorWeb
+public partial class MainPage : ContentPage
 {
-    public partial class MainPage : ContentPage
+    public MainPage()
     {
-        public MainPage()
-        {
-            InitializeComponent();
+        InitializeComponent();
 
 #if ANDROID
             this.Loaded += (s, e) =>
@@ -23,6 +20,5 @@ namespace MauiBlazorWeb
                 }
             };
 #endif
-        }
     }
 }

@@ -1,9 +1,8 @@
-namespace MauiBlazorWeb.Services
+namespace MauiBlazorWeb.Services;
+
+public enum LoginStatus
 {
-    public enum LoginStatus
-    {
-        None,
-        Success,
-        Failed
-    }
+    None,
+    Success,
+    Failed
 }

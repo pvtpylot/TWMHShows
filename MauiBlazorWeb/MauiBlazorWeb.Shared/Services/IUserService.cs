@@ -1,10 +1,9 @@
 using MauiBlazorWeb.Shared.Models;
 
-namespace MauiBlazorWeb.Shared.Services
+namespace MauiBlazorWeb.Shared.Services;
+
+public interface IUserService
 {
-    public interface IUserService
-    {
-        Task<IUserInfo?> GetUserByEmailAsync(string email);
-        Task<string> GetUserFirstNameAsync(string email);
-    }
+    Task<IUserInfo?> GetUserByEmailAsync(string email);
+    Task<string> GetUserFirstNameAsync(string email);
 }
