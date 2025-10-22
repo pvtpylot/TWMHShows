@@ -1,7 +1,8 @@
-namespace MauiBlazorWeb.Shared.Services;
-
-public interface IFormFactor
+namespace MauiBlazorWeb.Shared.Services
 {
-    public string GetFormFactor();
-    public string GetPlatform();
+    public interface IFormFactor
+    {
+        public string GetFormFactor();
+        public string GetPlatform();
+    }
 }

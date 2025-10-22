@@ -1,14 +1,16 @@
-namespace MauiBlazorWeb;
+using Microsoft.Maui;
+using Microsoft.Maui.Controls;
 
-public partial class App : Application
+namespace MauiBlazorWeb
 {
-    public App()
+    public partial class App : Application
     {
-        InitializeComponent();
-    }
+        public App()
+        {
+            InitializeComponent();
+        }
 
-    protected override Window CreateWindow(IActivationState? activationState)
-    {
-        return new Window(new MainPage()) { Title = "MauiBlazorWeb" };
+        protected override Window CreateWindow(IActivationState? activationState)
+            => new Window(new MainPage()) { Title = "MauiBlazorWeb" };
     }
 }

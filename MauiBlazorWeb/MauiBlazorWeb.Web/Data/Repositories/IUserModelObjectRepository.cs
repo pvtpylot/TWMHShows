@@ -1,7 +1,10 @@
-﻿namespace MauiBlazorWeb.Web.Data.Repositories;
+﻿using MauiBlazorWeb.Web.Data.DTOs;
 
-public interface IUserModelObjectRepository : IRepository<UserModelObject>
+namespace MauiBlazorWeb.Web.Data.Repositories
 {
-    Task<IEnumerable<UserModelObject>> GetAllAsync(string? applicationUserId);
-    Task<UserModelObject?> GetByNameAsync(string name);
+    public interface IUserModelObjectRepository : IRepository<UserModelObject>
+    {
+        Task<IEnumerable<UserModelObject>> GetAllAsync(string? applicationUserId);
+        Task<UserModelObject?> GetByNameAsync(string name);
+    }
 }

@@ -1,10 +1,10 @@
 @page "/new-model-horse"
 @page "/edit-model-horse/{Id}"
-@using System.Security.Claims
 @using MauiBlazorWeb.Shared.Models.DTOs
 @using MauiBlazorWeb.Shared.Services
-@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.IO
+@using Microsoft.AspNetCore.Authorization
 @inject IDataService DataService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
@@ -14,7 +14,7 @@
 
 <div class="container">
     <h1>@(Id == null ? "Add New Model Horse" : "Edit Model Horse")</h1>
-
+    
     <div class="mb-4">
         <a href="my-collection" class="btn btn-outline-secondary">
             <i class="oi oi-arrow-left"></i> Back to My Collection
@@ -30,67 +30,66 @@
     else
     {
         <EditForm Model="modelHorse" OnValidSubmit="HandleValidSubmit">
-            <DataAnnotationsValidator/>
-            <ValidationSummary/>
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
             <div class="row mb-3">
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="name" class="form-label">Name</label>
-                        <InputText id="name" class="form-control" @bind-Value="modelHorse.Name"/>
-                        <ValidationMessage For="@(() => modelHorse.Name)"/>
+                        <InputText id="name" class="form-control" @bind-Value="modelHorse.Name" />
+                        <ValidationMessage For="@(() => modelHorse.Name)" />
                     </div>
 
                     <div class="mb-3">
                         <label for="breed" class="form-label">Breed</label>
-                        <InputText id="breed" class="form-control" @bind-Value="modelHorse.Breed"/>
+                        <InputText id="breed" class="form-control" @bind-Value="modelHorse.Breed" />
                     </div>
 
                     <div class="row">
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="color" class="form-label">Color</label>
-                                <InputText id="color" class="form-control" @bind-Value="modelHorse.Color"/>
+                                <InputText id="color" class="form-control" @bind-Value="modelHorse.Color" />
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="size" class="form-label">Size</label>
-                                <InputText id="size" class="form-control" @bind-Value="modelHorse.Size"/>
+                                <InputText id="size" class="form-control" @bind-Value="modelHorse.Size" />
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="class" class="form-label">Class</label>
-                                <InputText id="class" class="form-control" @bind-Value="modelHorse.Class"/>
+                                <InputText id="class" class="form-control" @bind-Value="modelHorse.Class" />
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label for="description" class="form-label">Description</label>
-                        <InputTextArea id="description" class="form-control" @bind-Value="modelHorse.Description"
-                                       rows="3"/>
-                        <ValidationMessage For="@(() => modelHorse.Description)"/>
+                        <InputTextArea id="description" class="form-control" @bind-Value="modelHorse.Description" rows="3" />
+                        <ValidationMessage For="@(() => modelHorse.Description)" />
                     </div>
 
                     <div class="mb-3">
                         <label for="notes" class="form-label">Notes</label>
-                        <InputTextArea id="notes" class="form-control" @bind-Value="modelHorse.Notes" rows="3"/>
+                        <InputTextArea id="notes" class="form-control" @bind-Value="modelHorse.Notes" rows="3" />
                     </div>
                 </div>
-
+                
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="heroShot" class="form-label">Hero Shot Image</label>
-                        <InputFile id="heroShot" OnChange="OnHeroShotChange" class="form-control" accept="image/*"/>
+                        <InputFile id="heroShot" OnChange="OnHeroShotChange" class="form-control" accept="image/*" />
                     </div>
 
                     @if (modelHorse.HeroShotImage != null && modelHorse.HeroShotImage.Length > 0)
                     {
                         <div class="mb-3 text-center">
-                            <img src="@($"data:image/jpeg;base64,{Convert.ToBase64String(modelHorse.HeroShotImage)}")"
-                                 class="img-fluid img-thumbnail" alt="Hero shot" style="max-height: 300px;"/>
+                            <img src="@($"data:image/jpeg;base64,{Convert.ToBase64String(modelHorse.HeroShotImage)}")" 
+                                 class="img-fluid img-thumbnail" alt="Hero shot" style="max-height: 300px;" />
                             <div class="mt-2">
                                 <button type="button" class="btn btn-sm btn-outline-danger" @onclick="RemoveHeroShot">
                                     Remove Image
@@ -101,8 +100,7 @@
                     else
                     {
                         <div class="mb-3 text-center">
-                            <div class="border bg-light d-flex align-items-center justify-content-center"
-                                 style="height: 300px;">
+                            <div class="border bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
                                 <span class="text-muted">No image uploaded</span>
                             </div>
                         </div>
@@ -120,7 +118,8 @@
 </div>
 
 @code {
-    [Parameter] public string? Id { get; set; }
+    [Parameter]
+    public string? Id { get; set; }
 
     private UserModelObjectDto modelHorse = new();
     private bool loading = true;
@@ -133,8 +132,8 @@
 
         if (user.Identity?.IsAuthenticated ?? false)
         {
-            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
+            userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            
             if (!string.IsNullOrEmpty(Id))
             {
                 // Edit mode - load existing model horse
@@ -241,5 +240,4 @@
     {
         modelHorse.HeroShotImage = null;
     }
-
 }

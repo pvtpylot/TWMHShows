@@ -1,8 +1,12 @@
-namespace MauiBlazorWeb.Web.Data.Repositories;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-public interface IShowRepository : IRepository<Show>
+namespace MauiBlazorWeb.Web.Data.Repositories
 {
-    Task<IEnumerable<Show>> GetAllByJudgeIdAsync(string judgeId);
-    Task<Show?> GetByNameAsync(string name);
-    Task<Show?> GetWithClassesAsync(string id);
+    public interface IShowRepository : IRepository<Show>
+    {
+        Task<IEnumerable<Show>> GetAllByJudgeIdAsync(string judgeId);
+        Task<Show?> GetByNameAsync(string name);
+        Task<Show?> GetWithClassesAsync(string id);
+    }
 }

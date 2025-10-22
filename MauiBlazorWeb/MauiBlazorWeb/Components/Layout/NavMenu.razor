@@ -1,14 +1,14 @@
-<div class="top-row ps-3 navbar navbar-dark">
+    <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Tradewinds Model Horse Shows</a>
     </div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
-        <AuthorizeView>
+       <AuthorizeView>
             <NotAuthorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
@@ -27,13 +27,13 @@
                         <span class="bi bi-house-door-fill" aria-hidden="true"></span> Home
                     </NavLink>
                 </div>
-
+                
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="my-collection">
                         <span class="bi bi-collection" aria-hidden="true"></span> My Collection
                     </NavLink>
                 </div>
-
+                
                 <AuthorizeView Roles="ShowHolder,Admin" Context="showHolderAuth">
                     <div class="nav-item px-3">
                         <NavLink class="nav-link" href="manage-shows">
@@ -41,7 +41,7 @@
                         </NavLink>
                     </div>
                 </AuthorizeView>
-
+                
                 <AuthorizeView Roles="Admin" Context="adminAuth">
                     <div class="nav-item px-3">
                         <NavLink class="nav-link" href="user-management">
@@ -49,13 +49,13 @@
                         </NavLink>
                     </div>
                 </AuthorizeView>
-
+                
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="logout">
                         <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Log Out
                     </NavLink>
                 </div>
-            </Authorized>
+             </Authorized>
         </AuthorizeView>
     </nav>
 </div>

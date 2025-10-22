@@ -52,9 +52,7 @@
                             <option value="@role">@role</option>
                         }
                     </select>
-                    <button class="btn btn-primary" @onclick="AddRoleAsync" disabled="@string.IsNullOrEmpty(RoleToAdd)">
-                        Add
-                    </button>
+                    <button class="btn btn-primary" @onclick="AddRoleAsync" disabled="@string.IsNullOrEmpty(RoleToAdd)">Add</button>
                 </div>
                 @if (!AllRolesLoaded)
                 {
@@ -104,7 +102,6 @@
         gap: .35rem;
         font-weight: 500;
     }
-
     .role-chip .btn-close {
         float: none;
         margin-left: .1rem;
@@ -138,7 +135,6 @@
         {
             await LoadUserRolesAsync(SelectedUser.Id);
         }
-
         UpdateAssignableRoles();
     }
 
@@ -156,7 +152,6 @@
             AllRolesLoaded = true;
             SetStatus($"Could not load roles from service; using fallback. Details: {ex.Message}", true);
         }
-
         UpdateAssignableRoles();
     }
 
@@ -176,10 +171,9 @@
         }
         catch (Exception ex)
         {
-            UserRoles = new List<string>();
+            UserRoles = new();
             SetStatus($"Error loading user roles: {ex.Message}", true);
         }
-
         UpdateAssignableRoles();
     }
 
@@ -213,7 +207,6 @@
         {
             SetStatus($"Failed to add role '{RoleToAdd}'", true);
         }
-
         UpdateAssignableRoles();
     }
 
@@ -232,7 +225,6 @@
         {
             SetStatus($"Failed to remove role '{role}'", true);
         }
-
         UpdateAssignableRoles();
     }
 
@@ -247,5 +239,4 @@
         StatusMessage = string.Empty;
         StatusIsError = false;
     }
-
 }

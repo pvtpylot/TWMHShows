@@ -1,5 +1,7 @@
 @page "/diagnostics"
-@using System.Net.Http.Headers
+@using System.Net.Http
+@using System.Text.Json
+@using System.Diagnostics
 @using MauiBlazorWeb.Services
 @using Microsoft.Extensions.Logging
 @inject MauiAuthenticationStateProvider AuthStateProvider
@@ -13,7 +15,7 @@
         Running diagnostics... Please wait.
     </div>
     <div class="progress">
-        <div class="progress-bar progress-bar-striped progress-bar-animated"
+        <div class="progress-bar progress-bar-striped progress-bar-animated" 
              role="progressbar" style="width: 100%"></div>
     </div>
 }
@@ -38,7 +40,7 @@ else
             </div>
         }
     </div>
-
+    
     <div class="mt-4">
         <h4>Device Information:</h4>
         <ul class="list-group">
@@ -54,7 +56,7 @@ else
 
 @code {
     private bool isRunning;
-    private readonly List<DiagnosticResult> diagnosticResults = new();
+    private List<DiagnosticResult> diagnosticResults = new();
 
     private class DiagnosticResult
     {
@@ -74,10 +76,10 @@ else
         {
             // Test 1: Basic connection
             await TestBasicConnection();
-
+            
             // Test 2: Authentication state
             await TestAuthenticationState();
-
+            
             // Test 3: API connection
             await TestApiConnection();
         }
@@ -97,7 +99,7 @@ else
             StateHasChanged();
         }
     }
-
+    
     private async Task TestBasicConnection()
     {
         try
@@ -106,16 +108,16 @@ else
             {
                 ServerCertificateCustomValidationCallback = (_, _, _, _) => true
             });
-
+            
             var baseUrl = HttpClientHelper.BaseUrl;
             var response = await httpClient.GetAsync(baseUrl);
-
+            
             diagnosticResults.Add(new DiagnosticResult
             {
                 TestName = "Basic Connection",
                 Success = response.IsSuccessStatusCode,
-                Message = response.IsSuccessStatusCode
-                    ? $"Successfully connected to {baseUrl}"
+                Message = response.IsSuccessStatusCode 
+                    ? $"Successfully connected to {baseUrl}" 
                     : $"Failed to connect to {baseUrl}",
                 Details = $"Status: {response.StatusCode} ({(int)response.StatusCode})"
             });
@@ -131,7 +133,7 @@ else
             });
         }
     }
-
+    
     private async Task TestAuthenticationState()
     {
         try
@@ -139,9 +141,9 @@ else
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
             var userName = authState.User.Identity?.Name ?? "not authenticated";
-
+            
             var accessTokenInfo = await AuthStateProvider.GetAccessTokenInfoAsync();
-
+            
             diagnosticResults.Add(new DiagnosticResult
             {
                 TestName = "Authentication State",
@@ -165,25 +167,25 @@ else
             });
         }
     }
-
+    
     private async Task TestApiConnection()
     {
         try
         {
             var httpClient = HttpClientHelper.GetHttpClient();
-
+            
             var accessTokenInfo = await AuthStateProvider.GetAccessTokenInfoAsync();
             if (accessTokenInfo != null)
             {
-                httpClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue(
+                httpClient.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue(
                         accessTokenInfo.LoginResponse.TokenType,
                         accessTokenInfo.LoginResponse.AccessToken);
             }
-
+            
             var response = await httpClient.GetAsync($"{HttpClientHelper.BaseUrl}/api/weather");
             var content = await response.Content.ReadAsStringAsync();
-
+            
             diagnosticResults.Add(new DiagnosticResult
             {
                 TestName = "API Connection",
@@ -207,5 +209,4 @@ else
             });
         }
     }
-
 }

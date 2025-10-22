@@ -1,47 +1,52 @@
+using System;
 using System.Diagnostics;
+using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
+using MauiBlazorWeb.Models;
 
-namespace MauiBlazorWeb.Services;
-
-public class HttpClientFactory : IHttpClientFactory
+namespace MauiBlazorWeb.Services
 {
-    private readonly MauiAuthenticationStateProvider _authStateProvider;
-    private readonly HttpClient _httpClient;
-
-    public HttpClientFactory(HttpClient httpClient, MauiAuthenticationStateProvider authStateProvider)
+    public class HttpClientFactory : IHttpClientFactory
     {
-        _httpClient = httpClient;
-        _authStateProvider = authStateProvider;
-    }
+        private readonly HttpClient _httpClient;
+        private readonly MauiAuthenticationStateProvider _authStateProvider;
 
-    public async Task<HttpClient> CreateAuthenticatedClientAsync()
-    {
-        var accessTokenInfo = await _authStateProvider.GetAccessTokenInfoAsync();
-        if (accessTokenInfo == null)
+        public HttpClientFactory(HttpClient httpClient, MauiAuthenticationStateProvider authStateProvider)
         {
-            Debug.WriteLine("[HttpClientFactory] No access token info available");
-            throw new UnauthorizedAccessException("User is not authenticated. Please log in.");
+            _httpClient = httpClient;
+            _authStateProvider = authStateProvider;
         }
 
-        var token = accessTokenInfo.LoginResponse.AccessToken;
-        var scheme = accessTokenInfo.LoginResponse.TokenType;
+        public async Task<HttpClient> CreateAuthenticatedClientAsync()
+        {
+            var accessTokenInfo = await _authStateProvider.GetAccessTokenInfoAsync();
+            if (accessTokenInfo == null)
+            {
+                Debug.WriteLine("[HttpClientFactory] No access token info available");
+                throw new UnauthorizedAccessException("User is not authenticated. Please log in.");
+            }
 
-        // Create a new instance to avoid race conditions with headers
-        var client = CreateClient();
-        client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue(scheme, token);
+            var token = accessTokenInfo.LoginResponse.AccessToken;
+            var scheme = accessTokenInfo.LoginResponse.TokenType;
 
-        return client;
-    }
+            // Create a new instance to avoid race conditions with headers
+            var client = CreateClient();
+            client.DefaultRequestHeaders.Authorization = 
+                new AuthenticationHeaderValue(scheme, token);
 
-    public HttpClient CreateClient()
-    {
-        // Use the HttpClientHelper to get a properly configured HttpClient
-        var client = HttpClientHelper.GetHttpClient();
+            return client;
+        }
 
-        // Set the BaseAddress from HttpClientHelper
-        client.BaseAddress = new Uri(HttpClientHelper.BaseUrl);
-
-        return client;
+        public HttpClient CreateClient()
+        {
+            // Use the HttpClientHelper to get a properly configured HttpClient
+            var client = HttpClientHelper.GetHttpClient();
+            
+            // Set the BaseAddress from HttpClientHelper
+            client.BaseAddress = new Uri(HttpClientHelper.BaseUrl);
+            
+            return client;
+        }
     }
 }

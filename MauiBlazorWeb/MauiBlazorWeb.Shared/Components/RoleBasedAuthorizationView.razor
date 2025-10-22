@@ -1,29 +1,30 @@
 @using Microsoft.AspNetCore.Components.Authorization
-@inherits Microsoft.AspNetCore.Components.Authorization.AuthorizeView
+@using MauiBlazorWeb.Shared.Models
+@using System.Security.Claims
+@inherits AuthorizeView
 
 @code {
-
     /// <summary>
-    ///     The role(s) that are allowed to access the content.
-    ///     Multiple roles can be specified as comma-separated values.
+    /// The role(s) that are allowed to access the content.
+    /// Multiple roles can be specified as comma-separated values.
     /// </summary>
     [Parameter]
     public string? Roles { get; set; }
 
     /// <summary>
-    ///     Child content to display when the user is authorized.
+    /// Child content to display when the user is authorized.
     /// </summary>
     [Parameter]
     public RenderFragment<AuthenticationState>? ChildContent { get; set; }
 
     /// <summary>
-    ///     Content to display when the user is not authorized.
+    /// Content to display when the user is not authorized.
     /// </summary>
     [Parameter]
     public RenderFragment<AuthenticationState>? NotAuthorized { get; set; }
 
     /// <summary>
-    ///     Content to display when authorization is in progress.
+    /// Content to display when authorization is in progress.
     /// </summary>
     [Parameter]
     public RenderFragment<AuthenticationState>? Authorizing { get; set; }
@@ -34,7 +35,7 @@
         {
             var roleList = Roles.Split(',').Select(r => r.Trim());
             var policy = $"RequiresRole_{string.Join("_", roleList)}";
-
+            
             // Set the policy to require any of the specified roles
             Policy = policy;
         }
@@ -43,8 +44,7 @@
             // If no roles specified, just require the user to be authenticated
             Policy = "RequireAuthenticatedUser";
         }
-
+        
         base.OnInitialized();
     }
-
 }

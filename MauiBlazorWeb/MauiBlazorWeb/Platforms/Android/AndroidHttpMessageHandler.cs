@@ -11,10 +11,9 @@ namespace MauiBlazorWeb.Services
         public AndroidHttpMessageHandler()
         {
             // Trust all certificates for development only
-            ServerCertificateCustomValidationCallback = (message, certificate, chain, errors) =>
+            ServerCertificateCustomValidationCallback = (message, certificate, chain, errors) => 
             {
-                Debug.WriteLine(
-                    $"Android certificate validation callback - certificate: {certificate?.Subject}, errors: {errors}");
+                Debug.WriteLine($"Android certificate validation callback - certificate: {certificate?.Subject}, errors: {errors}");
                 return true;
             };
         }

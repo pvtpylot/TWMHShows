@@ -1,19 +1,22 @@
-namespace MauiBlazorWeb.Services;
+using System.Threading.Tasks;
 
-/// <summary>
-///     Provides functionality for diagnosing network connectivity issues.
-/// </summary>
-public interface INetworkDiagnostics
+namespace MauiBlazorWeb.Services
 {
     /// <summary>
-    ///     Tests connectivity to the application's backend services.
+    /// Provides functionality for diagnosing network connectivity issues.
     /// </summary>
-    /// <returns>True if connectivity test was successful.</returns>
-    Task<bool> PerformConnectivityTestAsync();
-
-    /// <summary>
-    ///     Gets a detailed diagnostic report of the current network status.
-    /// </summary>
-    /// <returns>A string containing diagnostic information.</returns>
-    Task<string> GenerateDiagnosticReportAsync();
+    public interface INetworkDiagnostics
+    {
+        /// <summary>
+        /// Tests connectivity to the application's backend services.
+        /// </summary>
+        /// <returns>True if connectivity test was successful.</returns>
+        Task<bool> PerformConnectivityTestAsync();
+        
+        /// <summary>
+        /// Gets a detailed diagnostic report of the current network status.
+        /// </summary>
+        /// <returns>A string containing diagnostic information.</returns>
+        Task<string> GenerateDiagnosticReportAsync();
+    }
 }

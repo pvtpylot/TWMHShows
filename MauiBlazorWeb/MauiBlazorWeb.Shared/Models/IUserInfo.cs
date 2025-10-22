@@ -1,9 +1,10 @@
-namespace MauiBlazorWeb.Shared.Models;
-
-public interface IUserInfo
+namespace MauiBlazorWeb.Shared.Models
 {
-    string Id { get; }
-    string Email { get; }
-    string? FirstName { get; }
-    string? LastName { get; }
+    public interface IUserInfo
+    {
+        string Id { get; }
+        string Email { get; }
+        string? FirstName { get; }
+        string? LastName { get; }
+    }
 }

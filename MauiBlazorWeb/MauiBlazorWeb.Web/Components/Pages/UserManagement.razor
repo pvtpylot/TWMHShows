@@ -13,28 +13,27 @@
 
 <h1>User Role Management</h1>
 
-<UserRoleManagement
-    Users="@Users"
+<UserRoleManagement 
+    Users="@Users" 
     SelectedUser="@SelectedUser"
-    OnUserSelected="HandleUserSelected"/>
+    OnUserSelected="HandleUserSelected" />
 
 @code {
     private List<UserDto> Users { get; set; } = new();
     private UserDto? SelectedUser { get; set; }
-
+    
     protected override async Task OnInitializedAsync()
     {
         await LoadUsersAsync();
     }
-
+    
     private async Task LoadUsersAsync()
     {
         Users = await RoleService.GetAllUsersAsync();
     }
-
+    
     private void HandleUserSelected(UserDto user)
     {
         SelectedUser = user;
     }
-
 }

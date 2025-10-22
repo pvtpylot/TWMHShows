@@ -1,36 +1,37 @@
 using MauiBlazorWeb.Shared.Models;
 using MauiBlazorWeb.Shared.Services;
 
-namespace MauiBlazorWeb.Services;
-
-public class MauiUserService : IUserService
+namespace MauiBlazorWeb.Services
 {
-    // In a real app, this would likely call an API endpoint
-    public Task<IUserInfo?> GetUserByEmailAsync(string email)
+    public class MauiUserService : IUserService
     {
-        // Simple implementation for now
-        var userInfo = new MauiUserInfo
+        // In a real app, this would likely call an API endpoint
+        public Task<IUserInfo?> GetUserByEmailAsync(string email)
         {
-            Id = "maui-user-id",
-            Email = email,
-            FirstName = "MAUI",
-            LastName = "User"
-        };
+            // Simple implementation for now
+            var userInfo = new MauiUserInfo
+            {
+                Id = "maui-user-id",
+                Email = email,
+                FirstName = "MAUI",
+                LastName = "User"
+            };
+            
+            return Task.FromResult<IUserInfo?>(userInfo);
+        }
 
-        return Task.FromResult<IUserInfo?>(userInfo);
+        public Task<string> GetUserFirstNameAsync(string email)
+        {
+            return Task.FromResult("MAUI User");
+        }
     }
 
-    public Task<string> GetUserFirstNameAsync(string email)
+    // Simple implementation of IUserInfo
+    public class MauiUserInfo : IUserInfo
     {
-        return Task.FromResult("MAUI User");
+        public string Id { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
     }
-}
-
-// Simple implementation of IUserInfo
-public class MauiUserInfo : IUserInfo
-{
-    public string Id { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
 }

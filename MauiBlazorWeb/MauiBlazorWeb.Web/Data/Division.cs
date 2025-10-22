@@ -5,22 +5,26 @@ namespace MauiBlazorWeb.Web.Data;
 
 public class Division : BaseEntity
 {
-    [Key] public long Id { get; set; }
-
-    [Required] public string Name { get; set; } = string.Empty;
-
+    [Key]
+    public long Id { get; set; }
+    
+    [Required]
+    public string Name { get; set; } = string.Empty;
+    
     public string Description { get; set; } = string.Empty;
-
-    [Required] public DivisionType DivisionType { get; set; }
-
+    
+    [Required]
+    public DivisionType DivisionType { get; set; }
+    
     // Display order within the show
     public int SortOrder { get; set; } = 0;
-
+    
     // Many-to-one relationship with Show
     public int ShowId { get; set; }
-
-    [ForeignKey("ShowId")] public Show? Show { get; set; }
-
+    
+    [ForeignKey("ShowId")]
+    public Show? Show { get; set; }
+    
     // One-to-many relationship with ShowClass
     public ICollection<ShowClass> ShowClasses { get; set; } = new List<ShowClass>();
 }
@@ -28,7 +32,7 @@ public class Division : BaseEntity
 public enum DivisionType
 {
     Halter,
-    Performance,
+    Performance, 
     Collectibility,
     Workmanship,
     Other

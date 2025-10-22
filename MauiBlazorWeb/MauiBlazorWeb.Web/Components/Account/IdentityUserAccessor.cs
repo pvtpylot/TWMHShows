@@ -1,20 +1,20 @@
 using MauiBlazorWeb.Web.Data;
 using Microsoft.AspNetCore.Identity;
 
-namespace MauiBlazorWeb.Web.Components.Account;
-
-internal sealed class IdentityUserAccessor(
-    UserManager<ApplicationUser> userManager,
-    IdentityRedirectManager redirectManager)
+namespace MauiBlazorWeb.Web.Components.Account
 {
-    public async Task<ApplicationUser> GetRequiredUserAsync(HttpContext context)
+    internal sealed class IdentityUserAccessor(UserManager<ApplicationUser> userManager, IdentityRedirectManager redirectManager)
     {
-        var user = await userManager.GetUserAsync(context.User);
+        public async Task<ApplicationUser> GetRequiredUserAsync(HttpContext context)
+        {
+            var user = await userManager.GetUserAsync(context.User);
 
-        if (user is null)
-            redirectManager.RedirectToWithStatus("Account/InvalidUser",
-                $"Error: Unable to load user with ID '{userManager.GetUserId(context.User)}'.", context);
+            if (user is null)
+            {
+                redirectManager.RedirectToWithStatus("Account/InvalidUser", $"Error: Unable to load user with ID '{userManager.GetUserId(context.User)}'.", context);
+            }
 
-        return user;
+            return user;
+        }
     }
 }

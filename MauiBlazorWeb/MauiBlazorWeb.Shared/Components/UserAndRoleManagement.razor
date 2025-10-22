@@ -1,15 +1,15 @@
 @using MauiBlazorWeb.Shared.Models.DTOs
+@using MauiBlazorWeb.Shared.Services
+
 <div class="container">
     <div class="row mb-4">
         <div class="col-12">
             <h1>User and Role Management</h1>
             <div class="btn-group" role="group">
-                <button class="btn @(ActiveTab == "users" ? "btn-primary" : "btn-outline-primary")"
-                        @onclick="SwitchToUsers">
+                <button class="btn @(ActiveTab == "users" ? "btn-primary" : "btn-outline-primary")" @onclick="SwitchToUsers">
                     Manage Users
                 </button>
-                <button class="btn @(ActiveTab == "roles" ? "btn-primary" : "btn-outline-primary")"
-                        @onclick="SwitchToRoles">
+                <button class="btn @(ActiveTab == "roles" ? "btn-primary" : "btn-outline-primary")" @onclick="SwitchToRoles">
                     Manage Roles
                 </button>
             </div>
@@ -20,14 +20,14 @@
         <div class="col-12">
             @if (ActiveTab == "users")
             {
-                <UserRoleManagement
-                    Users="@Users"
+                <UserRoleManagement 
+                    Users="@Users" 
                     SelectedUser="@SelectedUser"
-                    OnUserSelected="HandleUserSelected"/>
+                    OnUserSelected="HandleUserSelected" />
             }
             else
             {
-                <RoleManagement/>
+                <RoleManagement />
             }
         </div>
     </div>
@@ -37,23 +37,22 @@
     [Parameter] public List<UserDto> Users { get; set; } = new();
     [Parameter] public UserDto? SelectedUser { get; set; }
     [Parameter] public EventCallback<UserDto> OnUserSelected { get; set; }
-
+    
     private string ActiveTab { get; set; } = "users";
-
+    
     private void SwitchToUsers()
     {
         ActiveTab = "users";
     }
-
+    
     private void SwitchToRoles()
     {
         ActiveTab = "roles";
     }
-
+    
     private void HandleUserSelected(UserDto user)
     {
         SelectedUser = user;
         OnUserSelected.InvokeAsync(user);
     }
-
 }

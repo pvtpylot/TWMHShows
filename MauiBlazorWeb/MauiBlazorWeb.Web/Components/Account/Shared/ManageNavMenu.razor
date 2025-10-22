@@ -1,5 +1,6 @@
-@using MauiBlazorWeb.Web.Data
 @using Microsoft.AspNetCore.Identity
+@using MauiBlazorWeb.Web.Data
+
 @inject SignInManager<ApplicationUser> SignInManager
 
 <ul class="nav nav-pills flex-column">
@@ -33,5 +34,4 @@
     {
         hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
     }
-
 }

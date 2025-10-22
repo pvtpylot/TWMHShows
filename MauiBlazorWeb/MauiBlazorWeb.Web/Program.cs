@@ -1,8 +1,3 @@
-using System.Diagnostics;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using MauiBlazorWeb.Shared.Models;
 using MauiBlazorWeb.Shared.Models.DTOs;
 using MauiBlazorWeb.Shared.Services;
 using MauiBlazorWeb.Web.Components;
@@ -10,14 +5,18 @@ using MauiBlazorWeb.Web.Components.Account;
 using MauiBlazorWeb.Web.Data;
 using MauiBlazorWeb.Web.Data.Repositories;
 using MauiBlazorWeb.Web.Services;
-using MauiBlazorWeb.Web.Services.Mappers;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using MauiBlazorWeb.Web.Services.Mappers;
+using MauiBlazorWeb.Shared.Models;
+using System.Diagnostics; // Added
 using Microsoft.IdentityModel.Tokens;
-using _Imports = MauiBlazorWeb.Shared._Imports;
-// Added
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,7 +90,7 @@ builder.Services
             }
         };
     });
-// NOTE: Do not add .AddIdentityCookies() here to avoid duplicate scheme registration.
+    // NOTE: Do not add .AddIdentityCookies() here to avoid duplicate scheme registration.
 
 // Add this near the top of your Program.cs after other service registrations
 builder.Services.AddCors(options =>
@@ -99,13 +98,16 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowMauiApps", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            .AllowAnyOrigin()  
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
 });
 
-builder.Services.AddAuthorization(options => { AuthorizationPolicies.RegisterPolicies(options); });
+builder.Services.AddAuthorization(options => 
+{
+    AuthorizationPolicies.RegisterPolicies(options);
+});
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
@@ -129,8 +131,7 @@ builder.Services.AddScoped<IShowClassService, ShowClassService>();
 builder.Services.AddScoped<IEntryService, EntryService>();
 builder.Services.AddScoped<IResultService, ResultService>();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
-                       throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -148,11 +149,13 @@ builder.Services.AddSwaggerGen();
 // This makes the server accessible on all network interfaces
 // Changed: only when debugging (Visual Studio F5), not when ASPNETCORE_ENVIRONMENT == Development
 if (Debugger.IsAttached)
+{
     builder.WebHost.ConfigureKestrel(options =>
     {
         options.ListenAnyIP(5000); // HTTP port
         options.ListenAnyIP(7157, configure => configure.UseHttps()); // HTTPS port
     });
+}
 
 var app = builder.Build();
 
@@ -165,14 +168,13 @@ if (app.Environment.IsDevelopment())
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         dbContext.Database.Migrate();
     }
-
     app.UseMigrationsEndPoint();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 else
 {
-    app.UseExceptionHandler("/Error", true);
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -191,7 +193,7 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
-    .AddAdditionalAssemblies(typeof(_Imports).Assembly);
+    .AddAdditionalAssemblies(typeof(MauiBlazorWeb.Shared._Imports).Assembly);
 
 // Needed for external clients to log in
 app.MapGroup("/identity").MapIdentityApi<ApplicationUser>();
@@ -208,8 +210,11 @@ app.MapGet("/api/weather", async (IWeatherService weatherService) =>
 app.MapGet("/api/userModelObjects", async (IDataService dataService, ClaimsPrincipal user) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
-
+    if (string.IsNullOrEmpty(userId))
+    {
+        return Results.Unauthorized();
+    }
+    
     var results = await dataService.GetAllUserModelObjectsAsync(userId);
     return Results.Ok(results);
 }).RequireAuthorization();
@@ -220,9 +225,10 @@ app.MapGet("/api/userModelObjects/{id}", async (IDataService dataService, string
     return result != null ? Results.Ok(result) : Results.NotFound();
 }).RequireAuthorization();
 
-app.MapGet("/api/shows",
-        async (IShowService showService) => { return Results.Ok(await showService.GetAllShowsAsync()); })
-    .RequireAuthorization();
+app.MapGet("/api/shows", async (IShowService showService) =>
+{
+    return Results.Ok(await showService.GetAllShowsAsync());
+}).RequireAuthorization();
 
 app.MapPost("/api/shows", async (ShowDto showDto, IShowService showService) =>
 {
@@ -236,17 +242,16 @@ app.MapGet("/api/shows/{id}", async (string id, IShowService showService) =>
     return show != null ? Results.Ok(show) : Results.NotFound();
 }).RequireAuthorization();
 
-app.MapGet("/api/shows/judge/{judgeId}",
-    async (string judgeId, IShowService showService) =>
-    {
-        return Results.Ok(await showService.GetShowsByJudgeIdAsync(judgeId));
-    }).RequireAuthorization();
+app.MapGet("/api/shows/judge/{judgeId}", async (string judgeId, IShowService showService) =>
+{
+    return Results.Ok(await showService.GetShowsByJudgeIdAsync(judgeId));
+}).RequireAuthorization();
 
 app.MapPut("/api/shows/{id}", async (string id, ShowDto showDto, IShowService showService) =>
 {
     if (id != showDto.Id)
         return Results.BadRequest("ID mismatch");
-
+    
     var result = await showService.UpdateShowAsync(showDto);
     return Results.Ok(result);
 }).RequireAuthorization();
@@ -266,74 +271,87 @@ if (Debugger.IsAttached)
     app.Urls.Add("https://*:7157");
 }
 
-app.MapPost("/identity/mobilelogin", async (HttpContext context, UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager) =>
+app.MapPost("/identity/mobilelogin", async (HttpContext context, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager) =>
 {
     try
     {
         // Read the request body as form data
         var form = await context.Request.ReadFormAsync();
-
+        
         if (!form.TryGetValue("email", out var email) || !form.TryGetValue("password", out var password))
+        {
             return Results.BadRequest("Email and password are required");
-
+        }
+        
         // Attempt to sign in
-        var result = await signInManager.PasswordSignInAsync(email, password, true, false);
-
+        var result = await signInManager.PasswordSignInAsync(email, password, isPersistent: true, lockoutOnFailure: false);
+        
         if (result.Succeeded)
         {
             // Find the user
             var user = await userManager.FindByEmailAsync(email);
-            if (user == null) return Results.Unauthorized();
-
+            if (user == null)
+            {
+                return Results.Unauthorized();
+            }
+            
             // Get user roles
             var roles = await userManager.GetRolesAsync(user);
-
+            
             // Generate JWT access token
             var claims = new List<Claim>
             {
-                new(JwtRegisteredClaimNames.Sub, user.Id),
-                new(ClaimTypes.NameIdentifier, user.Id),
-                new(ClaimTypes.Name, user.UserName ?? email),
-                new(ClaimTypes.Email, user.Email ?? email)
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.UserName ?? email),
+                new Claim(ClaimTypes.Email, user.Email ?? email)
             };
 
-            foreach (var role in roles) claims.Add(new Claim(ClaimTypes.Role, role));
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expires = DateTime.UtcNow.AddHours(1);
 
             var token = new JwtSecurityToken(
-                jwtIssuer,
-                jwtAudience,
-                claims,
+                issuer: jwtIssuer,
+                audience: jwtAudience,
+                claims: claims,
                 expires: expires,
                 signingCredentials: creds);
 
             var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
-
+            
             // Generate a simple refresh token (persisting and rotation left as an exercise)
             var refreshToken = Guid.NewGuid().ToString();
-
+            
             var response = new
             {
                 tokenType = "Bearer",
-                accessToken,
+                accessToken = accessToken,
                 expiresIn = 3600, // 1 hour
-                refreshToken,
+                refreshToken = refreshToken,
                 userId = user.Id,
                 roles = roles.ToArray()
             };
-
+            
             return Results.Ok(response);
         }
-
-        if (result.IsLockedOut) return Results.StatusCode(423); // Locked
-
-        if (result.RequiresTwoFactor) return Results.StatusCode(403); // Need 2FA
-
-        return Results.Unauthorized();
+        else if (result.IsLockedOut)
+        {
+            return Results.StatusCode(423); // Locked
+        }
+        else if (result.RequiresTwoFactor)
+        {
+            return Results.StatusCode(403); // Need 2FA
+        }
+        else
+        {
+            return Results.Unauthorized();
+        }
     }
     catch (Exception ex)
     {
@@ -348,15 +366,14 @@ app.MapPost("/api/userModelObjects", async (IDataService dataService, UserModelO
     return Results.Created($"/api/userModelObjects/{result.Id}", result);
 }).RequireAuthorization();
 
-app.MapPut("/api/userModelObjects/{id}",
-    async (string id, UserModelObjectDto userModelObjectDto, IDataService dataService) =>
-    {
-        if (id != userModelObjectDto.Id)
-            return Results.BadRequest("ID mismatch");
-
-        var result = await dataService.UpdateUserModelObjectAsync(id, userModelObjectDto);
-        return result.Id != null ? Results.Ok(result) : Results.NotFound();
-    }).RequireAuthorization();
+app.MapPut("/api/userModelObjects/{id}", async (string id, UserModelObjectDto userModelObjectDto, IDataService dataService) =>
+{
+    if (id != userModelObjectDto.Id)
+        return Results.BadRequest("ID mismatch");
+    
+    var result = await dataService.UpdateUserModelObjectAsync(id, userModelObjectDto);
+    return result.Id != null ? Results.Ok(result) : Results.NotFound();
+}).RequireAuthorization();
 
 app.MapDelete("/api/userModelObjects/{id}", async (string id, IDataService dataService) =>
 {
@@ -369,16 +386,18 @@ using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-
+    
     // Ensure all application roles exist
     foreach (var role in ApplicationRoles.AllRoles)
+    {
         if (!await roleManager.RoleExistsAsync(role))
             await roleManager.CreateAsync(new IdentityRole(role));
-
+    }
+    
     // Optional: Create an admin user if none exists
     var adminEmail = "admin@example.com";
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
-
+    
     if (adminUser == null)
     {
         adminUser = new ApplicationUser
@@ -389,7 +408,7 @@ using (var scope = app.Services.CreateScope())
             First = "Admin",
             Last = "User"
         };
-
+        
         await userManager.CreateAsync(adminUser, "Admin123!");
         await userManager.AddToRoleAsync(adminUser, ApplicationRoles.Admin);
     }
@@ -424,10 +443,10 @@ app.MapPost("/api/roles", async (string name, RoleManager<IdentityRole> roleMana
 {
     if (string.IsNullOrEmpty(name))
         return Results.BadRequest("Role name is required");
-
+        
     if (await roleManager.RoleExistsAsync(name))
         return Results.Conflict("Role already exists");
-
+        
     var result = await roleManager.CreateAsync(new IdentityRole(name));
     return result.Succeeded ? Results.Created($"/api/roles/{name}", name) : Results.BadRequest(result.Errors);
 }).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
@@ -436,45 +455,42 @@ app.MapPut("/api/roles/{oldName}", async (string oldName, string newName, RoleMa
 {
     if (string.IsNullOrEmpty(newName))
         return Results.BadRequest("New role name is required");
-
+        
     var role = await roleManager.FindByNameAsync(oldName);
     if (role == null)
         return Results.NotFound();
-
-    if (await roleManager.RoleExistsAsync(newName) &&
-        !string.Equals(oldName, newName, StringComparison.OrdinalIgnoreCase))
+        
+    if (await roleManager.RoleExistsAsync(newName) && !string.Equals(oldName, newName, StringComparison.OrdinalIgnoreCase))
         return Results.Conflict("Role with new name already exists");
-
+        
     role.Name = newName;
     var result = await roleManager.UpdateAsync(role);
     return result.Succeeded ? Results.Ok() : Results.BadRequest(result.Errors);
 }).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
 
-app.MapDelete("/api/roles/{name}",
-    async (string name, RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager) =>
-    {
-        var role = await roleManager.FindByNameAsync(name);
-        if (role == null)
-            return Results.NotFound();
+app.MapDelete("/api/roles/{name}", async (string name, RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager) =>
+{
+    var role = await roleManager.FindByNameAsync(name);
+    if (role == null)
+        return Results.NotFound();
+        
+    // Check if there are users in this role
+    var usersInRole = await userManager.GetUsersInRoleAsync(name);
+    if (usersInRole.Any())
+        return Results.BadRequest("Cannot delete role with users assigned to it");
+        
+    var result = await roleManager.DeleteAsync(role);
+    return result.Succeeded ? Results.NoContent() : Results.BadRequest(result.Errors);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
 
-        // Check if there are users in this role
-        var usersInRole = await userManager.GetUsersInRoleAsync(name);
-        if (usersInRole.Any())
-            return Results.BadRequest("Cannot delete role with users assigned to it");
-
-        var result = await roleManager.DeleteAsync(role);
-        return result.Succeeded ? Results.NoContent() : Results.BadRequest(result.Errors);
-    }).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
-
-app.MapGet("/api/roles/{name}/count",
-    async (string name, RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager) =>
-    {
-        if (!await roleManager.RoleExistsAsync(name))
-            return Results.NotFound();
-
-        var usersInRole = await userManager.GetUsersInRoleAsync(name);
-        return Results.Ok(usersInRole.Count);
-    }).RequireAuthorization();
+app.MapGet("/api/roles/{name}/count", async (string name, RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager) =>
+{
+    if (!await roleManager.RoleExistsAsync(name))
+        return Results.NotFound();
+        
+    var usersInRole = await userManager.GetUsersInRoleAsync(name);
+    return Results.Ok(usersInRole.Count);
+}).RequireAuthorization();
 
 // Add these API endpoints for user management
 app.MapGet("/api/users", async (UserManager<ApplicationUser> userManager) =>
@@ -491,7 +507,7 @@ app.MapGet("/api/users", async (UserManager<ApplicationUser> userManager) =>
             IsLockedOut = u.LockoutEnabled && u.LockoutEnd > DateTimeOffset.Now
         })
         .ToListAsync();
-
+    
     return Results.Ok(users);
 }).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
 
@@ -500,9 +516,9 @@ app.MapGet("/api/users/{userId}", async (string userId, UserManager<ApplicationU
     var user = await userManager.FindByIdAsync(userId);
     if (user == null)
         return Results.NotFound();
-
+    
     var roles = await userManager.GetRolesAsync(user);
-
+    
     var userDto = new UserDto
     {
         Id = user.Id,
@@ -514,7 +530,7 @@ app.MapGet("/api/users/{userId}", async (string userId, UserManager<ApplicationU
         IsLockedOut = user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.Now,
         Roles = roles.ToList()
     };
-
+    
     return Results.Ok(userDto);
 }).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
 

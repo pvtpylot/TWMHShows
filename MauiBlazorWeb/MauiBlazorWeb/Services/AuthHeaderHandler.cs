@@ -1,60 +1,51 @@
-using System.Diagnostics;
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
+using System.IdentityModel.Tokens.Jwt;
 
-namespace MauiBlazorWeb.Services;
-
-public class AuthHeaderHandler : DelegatingHandler
+namespace MauiBlazorWeb.Services
 {
-    private readonly MauiAuthenticationStateProvider _auth;
-
-    public AuthHeaderHandler(MauiAuthenticationStateProvider auth)
+    public class AuthHeaderHandler : DelegatingHandler
     {
-        _auth = auth;
-    }
+        private readonly MauiAuthenticationStateProvider _auth;
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        var tokenInfo = await _auth.GetAccessTokenInfoAsync();
-        var token = tokenInfo?.LoginResponse?.AccessToken ?? await SecureStorage.Default.GetAsync("access_token");
+        public AuthHeaderHandler(MauiAuthenticationStateProvider auth) => _auth = auth;
 
-        if (!string.IsNullOrEmpty(token) && !IsJwtExpired(token))
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await base.SendAsync(request, cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            // Clear invalid/expired credentials to avoid "sticky" auth state
-            SecureStorage.Default.Remove("access_token");
-            SecureStorage.Default.Remove("user_id");
-            SecureStorage.Default.Remove("user_roles");
+            var tokenInfo = await _auth.GetAccessTokenInfoAsync();
+            var token = tokenInfo?.LoginResponse?.AccessToken ?? await SecureStorage.Default.GetAsync("access_token");
+
+            if (!string.IsNullOrEmpty(token) && !IsJwtExpired(token))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await base.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                // Clear invalid/expired credentials to avoid "sticky" auth state
+                SecureStorage.Default.Remove("access_token");
+                SecureStorage.Default.Remove("user_id");
+                SecureStorage.Default.Remove("user_roles");
+                try { await _auth.Logout(); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Logout failed: {ex}"); /* best effort */ }
+            }
+
+            return response;
+        }
+
+        private static bool IsJwtExpired(string token)
+        {
             try
             {
-                await _auth.Logout();
+                var handler = new JwtSecurityTokenHandler();
+                var jwt = handler.ReadJwtToken(token);
+                return jwt.ValidTo <= DateTime.UtcNow.AddSeconds(-60);
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.WriteLine($"Logout failed: {ex}"); /* best effort */
+                return true;
             }
-        }
-
-        return response;
-    }
-
-    private static bool IsJwtExpired(string token)
-    {
-        try
-        {
-            var handler = new JwtSecurityTokenHandler();
-            var jwt = handler.ReadJwtToken(token);
-            return jwt.ValidTo <= DateTime.UtcNow.AddSeconds(-60);
-        }
-        catch
-        {
-            return true;
         }
     }
 }

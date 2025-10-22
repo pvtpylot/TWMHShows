@@ -1,11 +1,14 @@
-namespace MauiBlazorWeb.Models;
+using System.Text.Json.Serialization;
 
-/// <summary>
-///     This class represents the information related to an access token.
-/// </summary>
-public class AccessTokenInfo
+namespace MauiBlazorWeb.Models
 {
-    public required string Email { get; set; }
-    public required LoginResponse LoginResponse { get; set; }
-    public required DateTime AccessTokenExpiration { get; set; }
+    /// <summary>
+    /// This class represents the information related to an access token.
+    /// </summary>
+    public class AccessTokenInfo
+    {
+        public required string Email { get; set; }
+        public required LoginResponse LoginResponse { get; set; }
+        public required DateTime AccessTokenExpiration { get; set; }
+    }
 }

@@ -3,13 +3,10 @@
 @inject MauiAuthenticationStateProvider AuthStateProvider
 
 <div class="loader loader-bouncing"><span>Redirecting...</span></div>
-
 @code{
-
     protected override void OnInitialized()
     {
         AuthStateProvider.Logout();
         navigationManager.NavigateTo("/login");
     }
-
 }
