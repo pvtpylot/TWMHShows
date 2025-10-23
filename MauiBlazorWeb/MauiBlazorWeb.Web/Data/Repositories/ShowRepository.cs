@@ -25,10 +25,28 @@ namespace MauiBlazorWeb.Web.Data.Repositories
         {
             if (!int.TryParse(id, out var showId))
                 return null;
-                
+
             return await _dbContext.Shows
                 .Include(s => s.Divisions)
                 .Include(s => s.Divisions.Select(d => d.ShowClasses))
+                .FirstOrDefaultAsync(s => s.Id == showId);
+        }
+
+        public async Task<IEnumerable<Show>> GetAllByShowHolderUserIdAsync(string ownerUserId)
+        {
+            return await _dbContext.Shows
+                .Include(s => s.ShowHolder)
+                .Where(s => s.ShowHolder != null && s.ShowHolder.ApplicationUserId == ownerUserId)
+                .ToListAsync();
+        }
+
+        public async Task<Show?> GetByIdWithShowHolderAsync(string id)
+        {
+            if (!int.TryParse(id, out var showId))
+                return null;
+
+            return await _dbContext.Shows
+                .Include(s => s.ShowHolder)
                 .FirstOrDefaultAsync(s => s.Id == showId);
         }
     }

@@ -1,0 +1,123 @@
+@using MauiBlazorWeb.Shared.Models.DTOs
+
+<EditForm Model="local" OnValidSubmit="Save">
+    <DataAnnotationsValidator />
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Show Type</label>
+            <InputSelect class="form-select" @bind-Value="local.ShowType">
+                @foreach (var t in showTypes)
+                {
+                    <option value="@t">@t</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Format</label>
+            <InputSelect class="form-select" @bind-Value="local.ShowFormat">
+                @foreach (var f in showFormats)
+                {
+                    <option value="@f">@f</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Private</label>
+            <div class="form-check">
+                <InputCheckbox class="form-check-input" @bind-Value="local.IsPrivate" />
+                <label class="form-check-label">Only invited or members can view</label>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Max Entries/User</label>
+            <InputNumber class="form-control" @bind-Value="local.MaxEntriesPerUser" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Members Only Entries</label>
+            <div class="form-check">
+                <InputCheckbox class="form-check-input" @bind-Value="local.AllowMemberOnlyEntries" />
+                <label class="form-check-label">Restrict entries to members only</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">NAN Qualifying</label>
+            <div class="form-check">
+                <InputCheckbox class="form-check-input" @bind-Value="local.IsNanQualifying" />
+                <label class="form-check-label">Mark results as NAN qualifying</label>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Entry Deadline</label>
+            <InputDate class="form-control" @bind-Value="local.EntryDeadline" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Judging Deadline</label>
+            <InputDate class="form-control" @bind-Value="local.JudgingDeadline" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Results Publish</label>
+            <InputDate class="form-control" @bind-Value="local.ResultsPublishedAt" />
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">NAMHSA Guidelines</label>
+            <InputTextArea class="form-control" rows="2" @bind-Value="local.NamhsaGuidelines" />
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Additional Metadata (JSON)</label>
+            <InputTextArea class="form-control font-monospace" rows="3" @bind-Value="local.AdditionalMetadata" />
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-success"><span class="bi bi-check2"></span> Save Settings</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public ShowDto Model { get; set; } = new();
+    [Parameter] public EventCallback<ShowDto> OnSave { get; set; }
+
+    private ShowDto local = new();
+
+    private static readonly string[] showTypes = new[] { "LiveShow", "PhotoShow" };
+    private static readonly string[] showFormats = new[] { "Regular", "NanQualifying", "Championship", "Specialty" };
+
+    protected override void OnParametersSet()
+    {
+        // clone incoming model to local editable copy
+        local = new ShowDto
+        {
+            Id = Model.Id,
+            Name = Model.Name,
+            Description = Model.Description,
+            ShowDate = Model.ShowDate,
+            EndDate = Model.EndDate,
+            Status = Model.Status,
+            JudgeId = Model.JudgeId,
+            ShowHolderId = Model.ShowHolderId,
+            ShowType = Model.ShowType,
+            ShowFormat = Model.ShowFormat,
+            IsPrivate = Model.IsPrivate,
+            MaxEntriesPerUser = Model.MaxEntriesPerUser,
+            AllowMemberOnlyEntries = Model.AllowMemberOnlyEntries,
+            EntryDeadline = Model.EntryDeadline,
+            JudgingDeadline = Model.JudgingDeadline,
+            ResultsPublishedAt = Model.ResultsPublishedAt,
+            IsNanQualifying = Model.IsNanQualifying,
+            NamhsaGuidelines = Model.NamhsaGuidelines,
+            AdditionalMetadata = Model.AdditionalMetadata
+        };
+    }
+
+    private async Task Save()
+    {
+        if (OnSave.HasDelegate)
+        {
+            await OnSave.InvokeAsync(local);
+        }
+    }
+}

@@ -131,6 +131,9 @@ builder.Services.AddScoped<IShowClassService, ShowClassService>();
 builder.Services.AddScoped<IEntryService, EntryService>();
 builder.Services.AddScoped<IResultService, ResultService>();
 
+// Register services (add after other services)
+builder.Services.AddScoped<IShowHolderService, ShowHolderService>();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
@@ -533,5 +536,39 @@ app.MapGet("/api/users/{userId}", async (string userId, UserManager<ApplicationU
     
     return Results.Ok(userDto);
 }).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.Admin));
+
+// ShowHolder endpoints
+app.MapGet("/api/showholder/shows", async (ClaimsPrincipal user, IShowHolderService svc) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+    var isAdmin = user.IsInRole(ApplicationRoles.Admin);
+    var shows = await svc.GetMyShowsAsync(userId, isAdmin);
+    return Results.Ok(shows);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.ShowHolder, ApplicationRoles.Admin));
+
+app.MapPost("/api/showholder/shows", async (ClaimsPrincipal user, IShowHolderService svc, ShowDto dto) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+    var isAdmin = user.IsInRole(ApplicationRoles.Admin);
+    var result = await svc.CreateShowAsync(userId, dto, isAdmin);
+    return Results.Created($"/api/shows/{result.Id}", result);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.ShowHolder, ApplicationRoles.Admin));
+
+app.MapPut("/api/showholder/shows/{id}", async (string id, ClaimsPrincipal user, IShowHolderService svc, ShowDto dto) =>
+{
+    if (id != dto.Id) return Results.BadRequest("ID mismatch");
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+    var isAdmin = user.IsInRole(ApplicationRoles.Admin);
+    var result = await svc.UpdateShowAsync(userId, dto, isAdmin);
+    return Results.Ok(result);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.ShowHolder, ApplicationRoles.Admin));
+
+app.MapDelete("/api/showholder/shows/{id}", async (string id, ClaimsPrincipal user, IShowHolderService svc) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+    var isAdmin = user.IsInRole(ApplicationRoles.Admin);
+    var ok = await svc.DeleteShowAsync(userId, id, isAdmin);
+    return ok ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.ShowHolder, ApplicationRoles.Admin));
 
 app.Run();
