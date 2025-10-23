@@ -1,4 +1,4 @@
-using MauiBlazorWeb.Services;
+    using MauiBlazorWeb.Services;
 using MauiBlazorWeb.Shared.Models;
 using MauiBlazorWeb.Shared.Services;
 using Microsoft.AspNetCore.Components.Authorization;
