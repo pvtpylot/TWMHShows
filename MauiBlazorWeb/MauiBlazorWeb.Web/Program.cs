@@ -124,14 +124,14 @@ builder.Services.AddScoped<IResultRepository, ResultRepository>();
 
 // Register mappers
 builder.Services.AddScoped<IEntityMapper<UserModelObject, UserModelObjectDto>, UserModelObjectMapper>();
+builder.Services.AddScoped<IEntityMapper<Division, DivisionDto>, DivisionMapper>();
+builder.Services.AddScoped<IEntityMapper<Show, ShowDto>, ShowMapper>();
 
 // Register services
 builder.Services.AddScoped<IShowService, ShowService>();
 builder.Services.AddScoped<IShowClassService, ShowClassService>();
 builder.Services.AddScoped<IEntryService, EntryService>();
 builder.Services.AddScoped<IResultService, ResultService>();
-
-// Register services (add after other services)
 builder.Services.AddScoped<IShowHolderService, ShowHolderService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -263,6 +263,42 @@ app.MapDelete("/api/shows/{id}", async (string id, IShowService showService) =>
 {
     var result = await showService.DeleteShowAsync(id);
     return result ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization();
+
+// Entries endpoints (added)
+app.MapGet("/api/entries", async (IEntryService entryService, string? showClassId, string? userModelObjectId) =>
+{
+    if (!string.IsNullOrWhiteSpace(showClassId))
+        return Results.Ok(await entryService.GetEntriesByShowClassIdAsync(showClassId));
+    if (!string.IsNullOrWhiteSpace(userModelObjectId))
+        return Results.Ok(await entryService.GetEntriesByUserModelObjectIdAsync(userModelObjectId));
+    return Results.BadRequest("Specify either showClassId or userModelObjectId.");
+}).RequireAuthorization();
+
+app.MapGet("/api/entries/{id}", async (IEntryService entryService, string id) =>
+{
+    var result = await entryService.GetEntryByIdAsync(id);
+    return result is not null ? Results.Ok(result) : Results.NotFound();
+}).RequireAuthorization();
+
+app.MapPost("/api/entries", async (IEntryService entryService, EntryDto dto) =>
+{
+    var created = await entryService.CreateEntryAsync(dto);
+    return Results.Created($"/api/entries/{created.Id}", created);
+}).RequireAuthorization();
+
+app.MapPut("/api/entries/{id}", async (IEntryService entryService, string id, EntryDto dto) =>
+{
+    if (id != dto.Id)
+        return Results.BadRequest("ID mismatch");
+    var updated = await entryService.UpdateEntryAsync(dto);
+    return Results.Ok(updated);
+}).RequireAuthorization();
+
+app.MapDelete("/api/entries/{id}", async (IEntryService entryService, string id) =>
+{
+    var ok = await entryService.DeleteEntryAsync(id);
+    return ok ? Results.NoContent() : Results.NotFound();
 }).RequireAuthorization();
 
 // Near the app.Run() call, add:

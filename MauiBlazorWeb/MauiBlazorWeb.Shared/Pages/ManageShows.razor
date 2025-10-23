@@ -5,12 +5,13 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using MauiBlazorWeb.Shared.Models.DTOs
 @using MauiBlazorWeb.Shared.Services
+@using MauiBlazorWeb.Shared.Components.Shows
 @inject IShowHolderService ShowHolderService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Manage Shows</PageTitle>
 
-<AuthorizeView Roles="ShowHolder,Admin">
+<AuthorizeView Roles="ShowHolder,Admin" Context="authState">
     <Authorized>
         <div class="container py-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -38,11 +39,11 @@
                                 <th>Status</th>
                                 <th>Private</th>
                                 <th>Holder Id</th>
-                                <th style="width: 320px;">Actions</th>
+                                <th style="width:320px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                        @if (shows.Count == 0)
+                        @if (shows.Count ==0)
                         {
                             <tr><td colspan="6" class="text-muted">No shows yet.</td></tr>
                         }
@@ -130,7 +131,7 @@
                         <strong>Divisions for "@selectedShow.Name"</strong>
                     </div>
                     <div class="card-body">
-                        <Components.Shows.DivisionManager ShowId="@int.Parse(selectedShow.Id)" />
+                        <DivisionManager ShowId="@int.Parse(selectedShow.Id)" />
                     </div>
                 </div>
             }
@@ -142,7 +143,7 @@
                         <strong>Settings for "@selectedShow.Name"</strong>
                     </div>
                     <div class="card-body">
-                        <Components.Shows.ShowSettings Model="@selectedShow" OnSave="SaveSettingsAsync" />
+                        <ShowSettings Model="@selectedShow" OnSave="SaveSettingsAsync" />
                     </div>
                 </div>
             }
