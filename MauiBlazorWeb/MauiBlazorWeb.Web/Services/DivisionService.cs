@@ -56,10 +56,10 @@ namespace MauiBlazorWeb.Web.Services
             if (divisionDto == null)
                 throw new ArgumentNullException(nameof(divisionDto));
 
-            if (!long.TryParse(divisionDto.Id, out var did) || did <= 0)
+            if (!long.TryParse(divisionDto.Id, out var did) || did <= 0 || did > int.MaxValue)
                 throw new ArgumentException("Invalid division ID", nameof(divisionDto));
 
-            var existing = await _divisionRepository.GetWithResultsAsync(unchecked((int)did));
+            var existing = await _divisionRepository.GetWithResultsAsync((int)did);
             if (existing == null)
                 throw new KeyNotFoundException($"Division with ID {divisionDto.Id} not found");
 
