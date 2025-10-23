@@ -31,11 +31,11 @@ namespace MauiBlazorWeb.Web.Services
 
         public async Task<DivisionDto?> GetByIdAsync(string id)
         {
-            if (!long.TryParse(id, out var did) || did <= 0)
+            if (!long.TryParse(id, out var did) || did <= 0 || did > int.MaxValue)
                 return null;
 
             // Repository uses int in GetWithResultsAsync; cast safely while we standardize IDs.
-            var division = await _divisionRepository.GetWithResultsAsync(unchecked((int)did));
+            var division = await _divisionRepository.GetWithResultsAsync((int)did);
             return division is null ? null : MapToDto(division);
         }
 
