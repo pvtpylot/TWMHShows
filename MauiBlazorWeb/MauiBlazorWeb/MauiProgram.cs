@@ -1,4 +1,4 @@
-    using MauiBlazorWeb.Services;
+using MauiBlazorWeb.Services;
 using MauiBlazorWeb.Shared.Models;
 using MauiBlazorWeb.Shared.Services;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -78,6 +78,7 @@ namespace MauiBlazorWeb
             builder.Services.AddScoped<IShowClassService, MauiShowClassService>();
             builder.Services.AddScoped<IEntryService, MauiEntryService>();
             builder.Services.AddScoped<IResultService, MauiResultService>();
+            builder.Services.AddScoped<MauiBlazorWeb.Shared.Services.IDivisionService, MauiBlazorWeb.Services.MauiDivisionService>();
 
             builder.Services.AddScoped<AuthHeaderHandler>();
 
