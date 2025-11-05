@@ -48,7 +48,7 @@ public class DivisionRepository : Repository<Division>, IDivisionRepository
                 .Include(d => d.ShowClasses)
                 .ToListAsync();
         }
-        return null;
+        return Task.FromResult(new List<Division>());
     }
 
     public Task<List<Division>> GetAllByShowClassIdAsync(int showClassId)
@@ -56,11 +56,11 @@ public class DivisionRepository : Repository<Division>, IDivisionRepository
         if (showClassId > 0)
         {
             return _dbContext.Divisions
-                .Where(d => d.Id == showClassId)
                 .Include(d => d.ShowClasses)
+                .Where(d => d.ShowClasses.Any(sc => sc.Id == showClassId))
                 .ToListAsync();
         }
-        return null;
+        return Task.FromResult(new List<Division>());
     }
 
     public Task<Division?> GetWithResultsAsync(int id)

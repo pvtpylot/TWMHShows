@@ -1,0 +1,130 @@
+@page "/shows"
+@using MauiBlazorWeb.Shared.Models.DTOs
+@using MauiBlazorWeb.Shared.Services
+@inject IShowService ShowService
+
+<PageTitle>Shows</PageTitle>
+
+<div class="container py-3">
+ <h2 class="mb-3">Shows</h2>
+
+ <div class="row g-2 align-items-end mb-3">
+ <div class="col-md-6">
+ <label class="form-label">Search</label>
+ <input class="form-control" @bind="search" placeholder="Search by name or description" />
+ </div>
+ <div class="col-md-3">
+ <label class="form-label">Sort</label>
+ <select class="form-select" @bind="sort">
+ <option value="date_desc">Date (newest)</option>
+ <option value="date_asc">Date (oldest)</option>
+ <option value="name_asc">Name (A-Z)</option>
+ <option value="name_desc">Name (Z-A)</option>
+ </select>
+ </div>
+ <div class="col-md-3">
+ <button class="btn btn-outline-secondary w-100" @onclick="Reload">Refresh</button>
+ </div>
+ </div>
+
+ @if (isLoading)
+ {
+ <div class="text-muted">Loading shows...</div>
+ }
+ else if (!string.IsNullOrWhiteSpace(error))
+ {
+ <div class="alert alert-danger">@error</div>
+ }
+ else if (filtered.Count ==0)
+ {
+ <div class="text-muted">No shows found.</div>
+ }
+ else
+ {
+ <div class="list-group">
+ @foreach (var s in filtered)
+ {
+ <a class="list-group-item list-group-item-action" href="/shows/@s.Id">
+ <div class="d-flex w-100 justify-content-between">
+ <h5 class="mb-1">@s.Name</h5>
+ <small>@s.ShowDate.ToShortDateString()@(s.EndDate.HasValue ? $" - {s.EndDate.Value.ToShortDateString()}" : "")</small>
+ </div>
+ <p class="mb-1">@s.Description</p>
+ <small>Status: @s.Status@(s.IsPrivate ? " • Private" : "")</small>
+ </a>
+ }
+ </div>
+ }
+</div>
+
+@code {
+ private List<ShowDto> shows = new();
+ private List<ShowDto> filtered = new();
+ private string? search;
+ private string sort = "date_desc";
+ private bool isLoading;
+ private string? error;
+
+ protected override async Task OnInitializedAsync()
+ {
+ await LoadAsync();
+ }
+
+ private async Task LoadAsync()
+ {
+ try
+ {
+ isLoading = true;
+ error = null;
+ var all = (await ShowService.GetAllShowsAsync()).ToList();
+ // Public view: hide private shows
+ shows = all.Where(s => !s.IsPrivate).ToList();
+ ApplyFilters();
+ }
+ catch (Exception ex)
+ {
+ error = ex.Message;
+ }
+ finally
+ {
+ isLoading = false;
+ }
+ }
+
+ private void ApplyFilters()
+ {
+ IEnumerable<ShowDto> q = shows;
+ if (!string.IsNullOrWhiteSpace(search))
+ {
+ var term = search.Trim().ToLowerInvariant();
+ q = q.Where(s => (s.Name ?? string.Empty).ToLowerInvariant().Contains(term)
+ || (s.Description ?? string.Empty).ToLowerInvariant().Contains(term));
+ }
+ q = sort switch
+ {
+ "date_asc" => q.OrderBy(s => s.ShowDate).ThenBy(s => s.Name),
+ "name_asc" => q.OrderBy(s => s.Name),
+ "name_desc" => q.OrderByDescending(s => s.Name),
+ _ => q.OrderByDescending(s => s.ShowDate).ThenBy(s => s.Name)
+ };
+ filtered = q.ToList();
+ StateHasChanged();
+ }
+
+ private async Task Reload()
+ {
+ await LoadAsync();
+ }
+
+ private string? Search
+ {
+ get => search;
+ set { search = value; ApplyFilters(); }
+ }
+
+ private string Sort
+ {
+ get => sort;
+ set { sort = value; ApplyFilters(); }
+ }
+}

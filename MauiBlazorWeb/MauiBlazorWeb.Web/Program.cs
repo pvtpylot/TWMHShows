@@ -121,6 +121,7 @@ builder.Services.AddScoped<IShowRepository, ShowRepository>();
 builder.Services.AddScoped<IShowClassRepository, ShowClassRepository>();
 builder.Services.AddScoped<IEntryRepository, EntryRepository>();
 builder.Services.AddScoped<IResultRepository, ResultRepository>();
+builder.Services.AddScoped<IDivisionRepository, DivisionRepository>(); // added
 
 // Register mappers
 builder.Services.AddScoped<IEntityMapper<UserModelObject, UserModelObjectDto>, UserModelObjectMapper>();
@@ -133,6 +134,8 @@ builder.Services.AddScoped<IShowClassService, ShowClassService>();
 builder.Services.AddScoped<IEntryService, EntryService>();
 builder.Services.AddScoped<IResultService, ResultService>();
 builder.Services.AddScoped<IShowHolderService, ShowHolderService>();
+// Register shared Division service
+builder.Services.AddScoped<MauiBlazorWeb.Shared.Services.IDivisionService, MauiBlazorWeb.Web.Services.DivisionService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -264,6 +267,41 @@ app.MapDelete("/api/shows/{id}", async (string id, IShowService showService) =>
     var result = await showService.DeleteShowAsync(id);
     return result ? Results.NoContent() : Results.NotFound();
 }).RequireAuthorization();
+
+// Division endpoints
+app.MapGet("/api/divisions", async (MauiBlazorWeb.Shared.Services.IDivisionService divisionService, string showId) =>
+{
+    if (string.IsNullOrWhiteSpace(showId))
+        return Results.BadRequest("showId is required");
+    var divisions = await divisionService.GetAllByShowIdAsync(showId);
+    return Results.Ok(divisions);
+}).RequireAuthorization();
+
+app.MapGet("/api/divisions/{id}", async (MauiBlazorWeb.Shared.Services.IDivisionService divisionService, string id) =>
+{
+    var division = await divisionService.GetByIdAsync(id);
+    return division is not null ? Results.Ok(division) : Results.NotFound();
+}).RequireAuthorization();
+
+app.MapPost("/api/divisions", async (MauiBlazorWeb.Shared.Services.IDivisionService divisionService, DivisionDto dto) =>
+{
+    var created = await divisionService.CreateDivisionAsync(dto);
+    return Results.Created($"/api/divisions/{created.Id}", created);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.ShowHolder, ApplicationRoles.Admin));
+
+app.MapPut("/api/divisions/{id}", async (MauiBlazorWeb.Shared.Services.IDivisionService divisionService, string id, DivisionDto dto) =>
+{
+    if (id != dto.Id)
+        return Results.BadRequest("ID mismatch");
+    var updated = await divisionService.UpdateDivisionAsync(dto);
+    return Results.Ok(updated);
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.ShowHolder, ApplicationRoles.Admin));
+
+app.MapDelete("/api/divisions/{id}", async (MauiBlazorWeb.Shared.Services.IDivisionService divisionService, string id) =>
+{
+    var ok = await divisionService.DeleteDivisionAsync(id);
+    return ok ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization(policy => policy.RequireRole(ApplicationRoles.ShowHolder, ApplicationRoles.Admin));
 
 // Entries endpoints (added)
 app.MapGet("/api/entries", async (IEntryService entryService, string? showClassId, string? userModelObjectId) =>

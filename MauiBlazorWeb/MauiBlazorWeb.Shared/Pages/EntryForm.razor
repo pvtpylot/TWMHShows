@@ -1,0 +1,112 @@
+@page "/enter/{showClassId}"
+@using Microsoft.AspNetCore.Components
+@using MauiBlazorWeb.Shared.Models.DTOs
+@using MauiBlazorWeb.Shared.Services
+@inject IEntryService EntryService
+@inject IDataService DataService
+@inject NavigationManager Nav
+
+<PageTitle>Enter Class</PageTitle>
+
+<div class="container py-3">
+ <h3>Enter Class</h3>
+
+ @if (!string.IsNullOrWhiteSpace(error))
+ {
+ <div class="alert alert-danger">@error</div>
+ }
+
+ @if (isLoading)
+ {
+ <div class="text-muted">Loading...</div>
+ }
+ else
+ {
+ <EditForm Model="model" OnValidSubmit="SubmitAsync">
+ <DataAnnotationsValidator />
+ <ValidationSummary />
+
+ <div class="row g-3">
+ <div class="col-md-4">
+ <label class="form-label">Your Horse</label>
+ <InputSelect @bind-Value="model.UserModelObjectId" class="form-select">
+ <option value="">-- Select --</option>
+ @foreach (var h in horses)
+ {
+ <option value="@h.Id">@h.Name</option>
+ }
+ </InputSelect>
+ </div>
+ <div class="col-md-4">
+ <label class="form-label">Entry Number</label>
+ <InputNumber class="form-control" @bind-Value="model.EntryNumber" />
+ </div>
+ </div>
+
+ <div class="mt-3">
+ <button class="btn btn-success" type="submit"><span class="bi bi-check2"></span> Submit Entry</button>
+ <button class="btn btn-secondary ms-2" type="button" @onclick="OnCancel">Cancel</button>
+ </div>
+ </EditForm>
+ }
+</div>
+
+@code {
+ [Parameter] public string showClassId { get; set; } = string.Empty;
+ [Parameter] public string? showId { get; set; }
+ private EntryDto model = new() { SubmissionDate = DateTime.UtcNow, Status = "Submitted" };
+ private List<UserModelObjectDto> horses = new();
+ private bool isLoading = true;
+ private string? error;
+
+ protected override async Task OnParametersSetAsync()
+ {
+ await LoadAsync();
+ }
+
+ private async Task LoadAsync()
+ {
+ try
+ {
+ isLoading = true;
+ model.ShowClassId = showClassId;
+ // Load current user's horses (server infers user from auth)
+ horses = (await DataService.GetAllUserModelObjectsAsync(null)).ToList();
+ }
+ catch (Exception ex)
+ {
+ error = ex.Message;
+ }
+ finally
+ {
+ isLoading = false;
+ }
+ }
+
+ private async Task SubmitAsync()
+ {
+ try
+ {
+ error = null;
+ if (string.IsNullOrWhiteSpace(model.UserModelObjectId))
+ {
+ error = "Select a horse.";
+ return;
+ }
+ var created = await EntryService.CreateEntryAsync(model);
+ if (!string.IsNullOrEmpty(created.Id))
+ {
+ Nav.NavigateTo($"/shows/{showId ?? string.Empty}");
+ }
+ }
+ catch (Exception ex)
+ {
+ error = ex.Message;
+ }
+ }
+
+ private void OnCancel()
+ {
+ Nav.NavigateTo($"/shows/{showId ?? string.Empty}");
+ }
+}
